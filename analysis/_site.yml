@@ -1,0 +1,20 @@
+name: Proteomics
+output_dir: ../public
+navbar:
+  title: CLL Proteome
+  left:
+  - text: Home
+    href: index.html
+  right:
+  - icon: fa-gitlab
+    text: Source code
+    href: https://git.embl.de/jlu/Proteomics
+output:
+  workflowr::wflow_html:
+    toc: yes
+    toc_float: yes
+    theme: cosmo
+    highlight: textmate
+    code_folding: show
+
+

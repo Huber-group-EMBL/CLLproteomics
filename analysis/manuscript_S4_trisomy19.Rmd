@@ -1,0 +1,394 @@
+---
+title: "Section 4: Proteomic signatures of trisomy19"
+author: "Junyan Lu"
+date: "2020-10-09"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: inline
+---
+
+# Load packages and datasets
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(limma)
+library(DESeq2)
+library(tidygraph)
+library(igraph)
+library(ggraph)
+library(cowplot)
+library(pheatmap)
+library(ComplexHeatmap)
+library(ggbeeswarm)
+library(SummarizedExperiment)
+library(tidyverse)
+
+#load datasets
+load("../data/patMeta_enc.RData")
+load("../data/ddsrna_enc.RData")
+load("../data/proteomic_LUMOS_enc.RData")
+load("../output/deResList.RData") #precalculated differential expression
+
+protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+source("../code/utils.R")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png","pdf"))
+
+```
+
+
+# Overview of differentially expressed proteins
+
+## A table of associations with 10% FDR
+```{r}
+resList <- filter(resList, Gene == "trisomy19") %>%
+  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
+  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
+resList %>% filter(adj.P.Val <= 0.1) %>% 
+  select(name, Chr,logFC, P.Value, adj.P.Val) %>%
+  mutate_if(is.numeric, formatC, digits=2) %>%
+  DT::datatable()
+```
+
+## Heatmap of differentially expressed proteins (10% FDR)
+(Restricted to M-CLL with trisomy12)
+```{r trisomy19_heatmap, fig.height=10, fig.width=6}
+protCLL$IGHV.status <- patMeta[match(colnames(protCLL),patMeta$Patient.ID),]$IGHV.status
+protCLL$trisomy12 <- patMeta[match(colnames(protCLL),patMeta$Patient.ID),]$trisomy12
+
+proList <- filter(resList, !is.na(name), adj.P.Val < 0.1) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
+plotMat <- assays(protCLL)[["QRILC"]][proList, protCLL$IGHV.status %in% "M" & protCLL$trisomy12 %in% 1]
+rownames(plotMat) <- rowData(protCLL[proList,])$hgnc_symbol
+
+colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
+  select(Patient.ID, trisomy12, IGHV.status,trisomy19) %>%
+  data.frame() %>% column_to_rownames("Patient.ID")
+colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
+colAnno$trisomy19 <- ifelse(colAnno$trisomy19 %in% 1, "yes","no")
+
+rowAnno <- rowData(protCLL)[proList,c("chromosome_name","hgnc_symbol"),drop=FALSE] %>% 
+  data.frame(stringsAsFactors = FALSE) %>%
+  mutate(onChr19 = ifelse(chromosome_name == "19","yes","no")) %>%
+  select(hgnc_symbol, onChr19) %>% data.frame() %>% column_to_rownames("hgnc_symbol")
+
+plotMat <- jyluMisc::mscale(plotMat, censor = 5)
+
+annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
+                trisomy19 = c(yes = "black",no = "grey80"),
+                IGHV.status = c(M = colList[3], U = colList[4]),
+                onChr19 = c(yes = colList[1],no = "white"))
+
+tri19Heatmap <- pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none",
+                   annotation_row = rowAnno,
+                   clustering_method = "ward.D2",
+                   color = colorRampPalette(c(colList[2],"white",colList[1]))(100),
+                   breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
+                   show_rownames = TRUE, show_colnames = FALSE,
+                   treeheight_row = 0, silent = TRUE)$gtable
+plot_grid(tri19Heatmap)
+```
+
+## Summary of chromosome distribution (10% FDR)
+```{r trisomy19_chr_summary, fig.height=3, fig.width=7}
+plotTab <- filter(resList, adj.P.Val <=0.1) %>% mutate(change = ifelse(logFC>0,"Up regulated","Down regulated"),
+                              chromosome = ifelse(Chr %in% "19","chr19","other")) %>%
+  group_by(change, chromosome) %>% summarise(n = length(id)) %>%
+  bind_rows(tibble(change = "Down regulated", chromosome = "chr19", n =0))
+
+sigNumPlot <- ggplot(plotTab, aes(x=change, y=n, fill = chromosome)) + 
+  geom_bar(stat = "identity", width = 0.8,
+           position = position_dodge2(width = 6),
+           col = "black") +
+  geom_text(aes(label=n), 
+            position = position_dodge(width = 0.9),
+            size=4, hjust=-0.1)  +
+  scale_fill_manual(name = "", labels = c("chr19","other"), values = colList) +
+  coord_flip(ylim = c(0,50), expand = FALSE) + xlab("") + ylab("Number of significant associations (10% FDR)") + theme_half 
+sigNumPlot
+
+```
+
+
+## Volcano plot
+
+```{r trisomy19_volcano, fig.height=13, fig.width=13}
+plotTab <- resList %>% mutate(onChr19 = ifelse(Chr %in% "19","yes","no"))
+#nameList <- filter(resList, adj.P.Val <=0.1)$name
+nameList <- c("GPI","CALR","RRAS","RANBP3","EIF4EBP1")
+tri19Volcano <- plotVolcano(plotTab, fdrCut =0.1, x_lab="log2FoldChange", posCol = colList[1], negCol = colList[2],
+            plotTitle = "trisomy19", ifLabel = TRUE, labelList = nameList)
+tri19Volcano
+```
+
+## Boxplot plot of selected genes (top 10 most differentially expressed)
+(Restricted to M-CLL with trisomy19)
+```{r trisomy19_selected_protein, fig.height=10, fig.width=10}
+protSub <- protCLL[, protCLL$IGHV.status %in% "M" & protCLL$trisomy12 %in% 1]
+
+protTab <- sumToTidy(protSub, rowID = "uniprotID", colID = "patID")
+resList.sig <- filter(resList, adj.P.Val < 0.1)
+#nameList <- resList.sig$name[1:10]
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19) %>%
+  mutate(status = ifelse(trisomy19 %in% 1,"trisomy19","WT"),
+         name = hgnc_symbol) %>%
+  mutate(status=factor(status, levels = c("WT","trisomy19")))
+pList <- plotBox(plotTab, pValTabel = resList, y_lab = "Protein expression")
+tri19Box<-cowplot::plot_grid(plotlist= pList, ncol=2)
+tri19Box
+```
+
+# Compare with RNA sequencing data
+
+## Differentially expressed genes related to trisomy19
+
+Prepare RNA sequencing data
+```{r, cache=TRUE, autodep=TRUE}
+dds$diag <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$diagnosis
+dds$trisomy19 <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy19
+dds$IGHV <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$IGHV.status
+dds$trisomy12 <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy12
+
+ddsCLL <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, 
+              dds$diag %in% "CLL" & !is.na(dds$trisomy19) & !is.na(dds$trisomy12) & !is.na(dds$IGHV)]
+
+ddsSub <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, 
+              dds$diag %in% "CLL" & dds$IGHV %in% "M" & dds$trisomy12 %in% 1 & !is.na(dds$trisomy19)]
+
+ddsSub.vst <- varianceStabilizingTransformation(ddsSub)
+```
+
+Differential expression
+```{r, cache=TRUE, autodep=TRUE}
+design(ddsCLL) <- ~ IGHV + trisomy12 + trisomy19
+deRes <- DESeq(ddsCLL)
+resTab <- results(deRes, contrast = c("trisomy19","1","0"), tidy = TRUE) %>%
+  mutate(name = rowData(ddsCLL[row,])$symbol) %>%
+  dplyr::rename(P.Value = pvalue)
+```
+
+### Boxplot of selected genes
+```{r trisomy19_selected_RNA, fig.height=10, fig.width=10}
+#nameList <- c("PTPN11", "PLCG1", "GRB2", "SMAD2", "PYCARD") 
+
+plotTab <- assay(ddsSub.vst[match(nameList, rowData(ddsSub.vst)$symbol),]) %>%
+  data.frame() %>% rownames_to_column("id") %>%
+  mutate(name = rowData(ddsSub.vst[id,])$symbol) %>%
+  gather(key = "patID", value = "count", -id, -name) %>% 
+  mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19) %>%
+  mutate(status = ifelse(trisomy19 %in% 1,"trisomy19","WT")) %>%
+  mutate(status=factor(status, levels = c("WT","trisomy19")))
+
+pList <- plotBox(plotTab, pValTabel = resTab, y_lab = "Normalized RNA expression")
+cowplot::plot_grid(plotlist= pList, ncol=2)
+```
+
+### Correlations between RNA and protein expression
+```{r trisomy19_protein_RNA_cor, fig.height=12, fig.width=9}
+rnaMat <- assay(ddsSub.vst)
+protMat <- assays(protSub)[["count"]]
+rownames(protMat) <- rowData(protSub)$ensembl_gene_id
+overSample <- intersect(colnames(rnaMat), colnames(protMat))
+rnaMat <- rnaMat[,overSample]
+protMat <- protMat[,overSample]
+
+plotList <- lapply(nameList, function(n) {
+  geneId <- rownames(ddsSub.vst)[match(n, rowData(ddsSub.vst)$symbol)]
+  stopifnot(length(geneId) ==1)
+  plotTab <- tibble(x=rnaMat[geneId,],y=protMat[geneId,])
+  coef <- cor(plotTab$x, plotTab$y, use="pairwise.complete")
+  annoPos <- ifelse (coef > 0, "left","right")
+  plotCorScatter(plotTab, "x","y", showR2 = FALSE, annoPos = annoPos, x_lab = "RNA expression",
+                 y_lab ="Protein expression", title = n,dotCol = colList[4], textCol = colList[1])
+})
+cowplot::plot_grid(plotlist = plotList, ncol =2)
+```
+
+# Buffering of gene dosage effect
+
+## Visualizing gene dosage effect on protein and RNA level
+
+```{r}
+#Prepare data
+load("../data/exprCNV_enc.RData")
+
+
+protExprTab <- allProtTab %>% mutate(type = "Protein")
+rnaExprTab <- filter(allRnaTab, id %in% protExprTab$id) %>% mutate(type = "RNA")
+
+comExprTab <- bind_rows(rnaExprTab, protExprTab) %>%
+  mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19,
+         trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12,
+         IGHV = patMeta[match(patID, patMeta$Patient.ID),]$IGHV.status) %>%
+  filter(!is.na(trisomy19), trisomy12 %in% 1, IGHV %in% "M") %>% mutate(cnv = ifelse(trisomy19 %in% 1, "trisomy19","WT"))
+
+```
+**In the plots below, the RNAseq dataset is subsetted for genes that also present in proteomic dataset. The plots will look somewhat different in all genes are used. But the trend is the same**
+
+
+### Proteins/RNAs on Chr19 have higher expressions in trisomy19 samples compared to other samples
+```{r dosage_effect, fig.height=3, fig.width=8}
+plotTab <- filter(comExprTab, ChromID %in% "chr19") %>%
+  group_by(id,type) %>% mutate(med=mean(expr)) %>% mutate(expr = (expr-med)) %>%
+  group_by(id, symbol, cnv, type) %>% summarise(meanExpr = mean(expr, na.rm=TRUE)) %>%
+  ungroup()
+
+ggplot(plotTab, aes(x=meanExpr, fill = cnv, col=cnv)) + 
+  geom_histogram(position = "identity", alpha=0.5) + facet_wrap(~type, scale = "free") +
+  scale_fill_manual(values = c(WT = "grey80", trisomy19 = colList[1]), name = "") +
+  scale_color_manual(values = c(WT = "grey80", trisomy19 = colList[1]), name = "") +
+  theme_full + xlab("Deviation to mean expression")
+
+```
+
+
+## Analyzing buffering effect
+
+### Detect buffered and non-buffered proteins
+
+Preprocessing protein and RNA data
+```{r}
+#subset samples and genes
+overSampe <- intersect(colnames(ddsCLL), colnames(protCLL))
+overGene <- intersect(rownames(ddsCLL), rowData(protCLL)$ensembl_gene_id)
+ddsSub <- ddsCLL[overGene, overSampe]
+protSub <- protCLL[match(overGene, rowData(protCLL)$ensembl_gene_id),overSampe]
+rowData(ddsSub)$uniprotID <- rownames(protSub)[match(rownames(ddsSub),rowData(protSub)$ensembl_gene_id)]
+
+#vst
+ddsSub.vst <- varianceStabilizingTransformation(ddsSub)
+```
+
+Differential expression on RNA level
+```{r}
+design(ddsSub) <- ~ IGHV + trisomy12 + trisomy19
+deRes <- DESeq(ddsSub, betaPrior = TRUE)
+rnaRes <- results(deRes, name = "trisomy191", tidy = TRUE) %>%
+  dplyr::rename(geneID = row, log2FC.rna = log2FoldChange, 
+                pvalue.rna = pvalue, padj.rna = padj, stat.rna= stat) %>%
+  select(geneID, log2FC.rna, pvalue.rna, padj.rna, stat.rna)
+```
+
+Protein abundance changes related to trisomy19
+```{r, cache=TRUE, autodep=TRUE}
+fdrCut <- 0.1
+protRes <- resList %>% filter(Gene == "trisomy19") %>%
+    dplyr::rename(uniprotID = id, 
+                  pvalue = P.Value, padj = adj.P.IHW,
+                  chrom = Chr) %>% 
+    mutate(geneID = rowData(protCLL[uniprotID,])$ensembl_gene_id) %>%
+    select(name, uniprotID, geneID, chrom, logFC, pvalue, padj, t) %>%
+    dplyr::rename(stat =t) %>%
+    arrange(pvalue) %>% as_tibble() 
+```
+
+Combine
+```{r}
+allRes <- left_join(protRes, rnaRes, by = "geneID")
+```
+
+**Only chr19 genes that are up-regulated are considered.**
+```{r}
+bufferTab <- allRes %>% filter(chrom %in% 19,stat.rna > 0) %>%
+  ungroup() %>%
+  mutate(stat.prot.sqrt = sqrt(stat),
+         stat.prot.center = stat.prot.sqrt - mean(stat.prot.sqrt)) %>%
+  mutate(score = -stat.prot.center*stat.rna) %>%
+  mutate(ifBuffer = case_when(
+    padj < 0.1 & padj.rna < 0.1 & stat > 0 ~ "non-Buffered",
+    padj > 0.1 & padj.rna < 0.1 ~ "Buffered",
+    padj < 0.1 & padj.rna > 0.1 & stat > 0 ~ "Enhanced",
+    TRUE ~ "Undetermined"
+  )) %>%
+  arrange(desc(score))
+```
+
+### Table of buffering status
+```{r}
+bufferTab %>% mutate_if(is.numeric, formatC, digits=2) %>%
+  select(name, pvalue, pvalue.rna, padj, padj.rna, ifBuffer) %>%
+  DT::datatable()
+```
+
+### Summary plot
+```{r sum_buffer_number, fig.width=6, fig.height=4}
+sumTab <- bufferTab %>% group_by(ifBuffer) %>%
+  summarise(n = length(name))
+
+ggplot(sumTab, aes(x=ifBuffer, y = n)) + 
+  geom_bar(aes(fill = ifBuffer), stat="identity") + 
+  geom_text(aes(label = paste0("n=", n)),vjust=-1,col=colList[1]) +
+  scale_fill_manual(values =c(Buffered = colList[1],
+                              Enhanced = colList[4],
+                              `non-Buffered` = colList[2],
+                              Undetermined = "grey50")) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5),
+                     legend.position = "none") +
+  ylab("Number of proteins") + ylim(0,130)
+  
+```
+
+### Plot example cases of buffered and non-buffered proteins
+```{r buffer_example, fig.height=11, fig.width=10}
+protList <- c("RRAS","ERCC2","NACC1", "MAP4K1")
+geneList <- bufferTab[match(protList, bufferTab$name),]$geneID
+pList <- lapply(geneList, function(i) {
+  tabProt <- allProtTab %>% filter(id == i) %>%
+    select(id, patID, symbol,expr) %>% dplyr::rename(protExpr = expr)
+  tabRna <- allRnaTab %>% filter(id == i) %>%
+    select(id, patID, expr) %>% dplyr::rename(rnaExpr = expr)
+  plotTab <- left_join(tabProt, tabRna, by = c("id","patID")) %>% 
+    filter(!is.na(protExpr), !is.na(rnaExpr)) %>%
+    mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19,
+           trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12,
+           IGHV = patMeta[match(patID, patMeta$Patient.ID),]$IGHV.status) %>%
+    filter(!is.na(trisomy19),trisomy12 %in% 1, IGHV %in%"M") %>%
+    mutate(trisomy19 = ifelse(trisomy19 %in% 1, "yes","no"))
+  p <- ggplot(plotTab, aes(x=rnaExpr, y = protExpr)) +
+    geom_point(aes(col=trisomy19)) + 
+    geom_smooth(formula =  y~x, method="lm",se=FALSE, color = "grey50", linetype ="dashed" ) + 
+    ggtitle(unique(plotTab$symbol)) +
+    ylab("Protein expression") + xlab("RNA expression") +
+    scale_color_manual(values =c(yes = colList[1],no=colList[2])) +
+    theme_full + theme(legend.position = "bottom")
+  ggExtra::ggMarginal(p, type = "histogram", groupFill = TRUE)
+  })
+cowplot::plot_grid(plotlist = pList, ncol=2)
+```
+
+
+# Validation using timsTOF data
+
+Load timsTOF data
+```{r}
+load("../data/proteomic_timsTOF_enc.RData")
+load("../output/deResList_timsTOF.RData")
+```
+
+```{r}
+resList <- filter(resList, Gene == "trisomy19") %>%
+  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
+  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
+```
+
+```{r trisomy19_selected_protein_timsTOF, fig.height=10, fig.width=12}
+protSub <- protCLL[, protCLL$IGHV.status %in% "M" & protCLL$trisomy12 %in% 1]
+protTab <- sumToTidy(protSub, rowID = "uniprotID", colID = "patID")
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19) %>%
+  mutate(status = ifelse(trisomy19 %in% 1,"trisomy19","WT"),
+         name = hgnc_symbol) %>%
+  filter(name %in% resList$name)  %>%
+  mutate(status=factor(status, levels = c("WT","trisomy19")))
+pList <- plotBox(plotTab, pValTabel = resList)
+cowplot::plot_grid(plotlist= pList, ncol=2)
+```
+
+# Assemble figures
+
+## Main text figure 3
+```{r Figure3, fig.height=13, fig.width=15}
+plot_grid(tri19Heatmap,
+          plot_grid(tri19Volcano, tri19Box,ncol=1,rel_heights = c(0.4,0.6),
+                    labels = c("B","C"), label_size = 20, vjust = c(1.5, 0)),
+          ncol=2,labels = c("A",""), label_size = 20)
+```
+
+

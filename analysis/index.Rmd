@@ -1,0 +1,33 @@
+---
+title: "The Proteome Landscape of Chronic Lymphocytic Leukemia (CLL)"
+site: workflowr::wflow_site
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+<font size="4">This is the workflow that generates the data analysis results and figures presented in the manuscript "The Proteome Landscape of Chronic Lymphocytic Leukemia (CLL)" by Meier-Abt and Lu et al. Users can also use the associated source code to reproduce all results and figures in the manuscript.</font> 
+
+
+### [Section 1: Overview of CLL proteomic dataset](./manuscript_S1_Overview.html)  
+
+### [Section 2: Identifying proteins associated disease drivers in CLL](./manuscript_S2_genomicAssociation.html)  
+
+### [Section 3: Proteomic signatures of trisomy12](./manuscript_S3_trisomy12.html) 
+
+### [Section 4: Proteomic signatures of trisomy19](./manuscript_S4_trisomy19.html) 
+
+### [Section 5: Proteomic signature of IGHV mutation status](./manuscript_S5_IGHV.html) 
+
+### [Section 6: Proteomic signature of del11q](./manuscript_S6_del11q.html)  
+
+### [Section 7: Proteomic signature of SF3B1](./manuscript_S7_SF3B1.html)  
+
+### [Section 8: Identifying proteomic biomarkers drug responses and clinical outcomes](./manuscript_S8_drugResponse_Outcomes.html)  
+
+### [Section 9: Factors affecting STAT2 expression in CLL](./manuscript_S9_STAT2.Rmd)  
+
+
+

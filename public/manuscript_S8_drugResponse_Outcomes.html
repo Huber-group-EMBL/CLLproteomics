@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Junyan Lu" />
+
+<meta name="date" content="2020-10-09" />
+
+<title>Section 8: Identifying proteomic biomarkers drug responses and clinical outcomes</title>
+
+<script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
+<script src="site_libs/jquery-3.5.1/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.3/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.17/datatables.js"></script>
+<link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-1.10.20/js/jquery.dataTables.min.js"></script>
+<link href="site_libs/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.1/js/crosstalk.min.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">CLL Proteome</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://git.embl.de/jlu/Proteomics">
+    <span class="fas fa-gitlab"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Section 8: Identifying proteomic biomarkers drug responses and clinical outcomes</h1>
+<h4 class="author">Junyan Lu</h4>
+<h4 class="date">2020-10-09</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-04-09
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>CLLproteomics_publish/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200227code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200227)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200227code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200227)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgitembldejluProteomicstree3fb50c57fa6132d3779996e8364369f6fb4aea70targetblank3fb50c5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://git.embl.de/jlu/Proteomics/tree/3fb50c57fa6132d3779996e8364369f6fb4aea70" target="_blank">3fb50c5</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgitembldejluProteomicstree3fb50c57fa6132d3779996e8364369f6fb4aea70targetblank3fb50c5a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://git.embl.de/jlu/Proteomics/tree/3fb50c57fa6132d3779996e8364369f6fb4aea70" target="_blank">3fb50c5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/.Rhistory
+    Ignored:    analysis/manuscript_S1_Overview_cache/
+    Ignored:    code/.DS_Store
+    Ignored:    code/.Rhistory
+    Ignored:    data/.DS_Store
+    Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  analysis/.trisomy12_norm.pdf
+    Untracked:  analysis/manuscript_S1_Overview.Rmd
+    Untracked:  analysis/manuscript_S2_genomicAssociation.Rmd
+    Untracked:  analysis/manuscript_S3_trisomy12.Rmd
+    Untracked:  analysis/manuscript_S4_trisomy19.Rmd
+    Untracked:  analysis/manuscript_S5_IGHV.Rmd
+    Untracked:  analysis/manuscript_S6_del11q.Rmd
+    Untracked:  analysis/manuscript_S7_SF3B1.Rmd
+    Untracked:  analysis/manuscript_S8_drugResponse_Outcomes.Rmd
+    Untracked:  analysis/manuscript_S9_STAT2.Rmd
+    Untracked:  analysis/test.pdf
+    Untracked:  code/utils.R
+    Untracked:  data/Fig1A.png
+    Untracked:  data/ddsrna_enc.RData
+    Untracked:  data/exprCNV_enc.RData
+    Untracked:  data/gmts/
+    Untracked:  data/patMeta_enc.RData
+    Untracked:  data/pepCLL_lumos_enc.RData
+    Untracked:  data/pheno1000_enc.RData
+    Untracked:  data/proteins_in_complexes
+    Untracked:  data/proteomic_LUMOS_enc.RData
+    Untracked:  data/proteomic_timsTOF_enc.RData
+    Untracked:  data/survival_enc.RData
+    Untracked:  output/MSH6_splicing.svg
+    Untracked:  output/SUGP1_splicing.svg
+    Untracked:  output/deResList.RData
+    Untracked:  output/deResList_timsTOF.RData
+    Untracked:  output/dxdCLL.RData
+    Untracked:  output/dxdCLL2.RData
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/analysisSF3B1.Rmd
+    Deleted:    analysis/comparePlatforms.Rmd
+    Deleted:    analysis/compareProteomicsRNAseq.Rmd
+    Deleted:    analysis/correlateCLLPD.Rmd
+    Deleted:    analysis/correlateGenomic.Rmd
+    Deleted:    analysis/correlateGenomic_removePC.Rmd
+    Deleted:    analysis/correlateMIR.Rmd
+    Deleted:    analysis/correlateMethylationCluster.Rmd
+    Modified:   analysis/index.Rmd
+    Deleted:    analysis/predictOutcome.Rmd
+    Deleted:    analysis/processProteomics_LUMOS.Rmd
+    Deleted:    analysis/processProteomics_timsTOF.Rmd
+    Deleted:    analysis/qualityControl_LUMOS.Rmd
+    Deleted:    analysis/qualityControl_timsTOF.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="load-packages-and-datasets" class="section level1">
+<h1>Load packages and datasets</h1>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, dev = c(&quot;png&quot;,&quot;pdf&quot;))
+library(limma)
+library(pheatmap)
+library(jyluMisc)
+library(survival)
+library(survminer)
+library(maxstat)
+library(glmnet)
+library(SummarizedExperiment)
+library(cowplot)
+library(tidyverse)
+
+load(&quot;../data/patMeta_enc.RData&quot;)
+load(&quot;../data/pheno1000_enc.RData&quot;)
+load(&quot;../data/survival_enc.RData&quot;)
+load(&quot;../data/proteomic_LUMOS_enc.RData&quot;) #using the LUMOS data
+protCLL$trisomy12 &lt;- patMeta[match(colnames(protCLL),patMeta$Patient.ID),]$trisomy12
+protCLL &lt;- protCLL[rowData(protCLL)$uniqueMap,]
+source(&quot;../code/utils.R&quot;)</code></pre>
+</div>
+<div id="correlations-between-protein-abundance-and-drug-response" class="section level1">
+<h1>Correlations between protein abundance and drug response</h1>
+<div id="preprocess-datasets" class="section level2">
+<h2>Preprocess datasets</h2>
+<p>Drug screening data from 1000CPS: low quality samples after QC are removed; the edge effect corrected viability values are used</p>
+<pre class="r"><code>viabMat &lt;- pheno1000_main %&gt;% filter(!lowQuality, ! Drug %in% c(&quot;DMSO&quot;,&quot;PBS&quot;), patientID %in% colnames(protCLL)) %&gt;%
+  group_by(patientID, Drug) %&gt;% summarise(viab = mean(normVal.adj.cor_auc)) %&gt;%
+  spread(key = patientID, value = viab) %&gt;%
+  data.frame(stringsAsFactors = FALSE) %&gt;% column_to_rownames(&quot;Drug&quot;) %&gt;%
+  as.matrix()</code></pre>
+<p>Proteomics data</p>
+<pre class="r"><code>proMat &lt;- assays(protCLL)[[&quot;count&quot;]]
+proMat &lt;- proMat[,colnames(viabMat)]
+
+#Remove proteins without much variance (to lower multi-testing burden)
+
+sds &lt;- genefilter::rowSds(proMat,na.rm=TRUE)
+proMat &lt;- proMat[sds &gt; genefilter::shorth(sds),]</code></pre>
+<p>How many samples have both proteomics data and CPS1000 screen data</p>
+<pre class="r"><code>ncol(proMat)</code></pre>
+<pre><code>[1] 45</code></pre>
+</div>
+<div id="association-test" class="section level2">
+<h2>Association test</h2>
+<pre class="r"><code>resTab.auc &lt;- lapply(rownames(viabMat),function(drugName) {
+  viab &lt;- viabMat[drugName, ]
+  designMat &lt;- model.matrix(~1+viab)
+  fit &lt;- lmFit(proMat,  designMat)
+  fit2 &lt;- eBayes(fit)
+  corRes &lt;- topTable(fit2, number =&quot;all&quot;, adjust.method = &quot;BH&quot;, coef = &quot;viab&quot;) %&gt;% rownames_to_column(&quot;id&quot;) %&gt;%
+    mutate(symbol = rowData(protCLL[id,])$hgnc_symbol, Drug = drugName)
+}) %&gt;% bind_rows() %&gt;% mutate(adj.P.Val = p.adjust(P.Value, method = &quot;BH&quot;)) %&gt;% arrange(P.Value)</code></pre>
+<div id="bar-plot-to-show-the-number-of-associations-10-fdr" class="section level3">
+<h3>Bar plot to show the number of associations (10% FDR)</h3>
+<pre class="r"><code>#Select significant associations (10% FDR)
+resTab.sig &lt;- filter(resTab.auc, adj.P.Val &lt; 0.1) %&gt;% 
+  select(Drug, symbol, id,logFC, P.Value, adj.P.Val)
+
+plotTab &lt;- resTab.sig %&gt;% group_by(Drug) %&gt;%
+  summarise(n = length(id)) %&gt;% ungroup()
+ordTab &lt;- group_by(plotTab, Drug) %&gt;% summarise(total = sum(n)) %&gt;%
+  arrange(desc(total))
+plotTab &lt;- mutate(plotTab, Drug = factor(Drug, levels = ordTab$Drug)) %&gt;%
+  filter(n&gt;0)
+
+drugBar &lt;- ggplot(plotTab, aes(x=Drug, y = n)) + geom_bar(stat=&quot;identity&quot;,fill=colList[4]) + 
+  geom_text(aes(label = paste0(&quot;n=&quot;, n)),vjust=-1,col=colList[1]) +
+  ylim(0,15)+ annotate(&quot;text&quot;, label = &quot;Number of associations (10% FDR)&quot;, x=Inf, y=Inf,hjust=1, vjust=1, size=6)+
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab(&quot;Number&quot;) + xlab(&quot;&quot;)
+
+drugBar</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-6-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="table-of-significant-associations-10-fdr" class="section level3">
+<h3>Table of significant associations (10% FDR)</h3>
+<pre class="r"><code>resTab.sig %&gt;% mutate_if(is.numeric, formatC, digits=2, format= &quot;e&quot;) %&gt;%
+  DT::datatable()</code></pre>
+<div id="htmlwidget-16687c8f6ec6bc0aecc6" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-16687c8f6ec6bc0aecc6">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76"],["Cobimetinib","Trametinib","Afatinib","Cobimetinib","Duvelisib","Venetoclax","Cobimetinib","SCH772984","Cobimetinib","Tofacitinib","KU-55933","Trametinib","Venetoclax","Duvelisib","Tofacitinib","JNK-IN-8","Tozasertib","Cobimetinib","Idelalisib","Ganetespib","Trametinib","Dasatinib","BMS-509744","PRT062607","Selinexor","Dasatinib","Cobimetinib","MK-2206","Duvelisib","MK-2206","Cobimetinib","Venetoclax","10058-F4","Sunitinib","BMS-509744","Imatinib","Trametinib","Cobimetinib","Selisistat","Trametinib","Cobimetinib","Trametinib","Tozasertib","Cobimetinib","Tozasertib","JNK-IN-8","Duvelisib","Selinexor","KU-55933","MK-2206","Cobimetinib","SCH772984","KU-55933","MK-2206","Tofacitinib","Tofacitinib","Venetoclax","Cobimetinib","PRT062607","Selinexor","MK-2206","Tofacitinib","AZD8055","Trametinib","PRT062607","Cobimetinib","Idelalisib","Rapamycin","SCH772984","Ibrutinib","Afatinib","Menin-MLL Inhibitor","Rapamycin","Quizartinib","EPZ-6438","Cobimetinib"],["STAT2","STAT2","CNP","DOCK10","HEBP2","PGD","SLC25A20","STAT2","HIRIP3","ANXA1","PKIG","DOCK10","PNP","GPD2","GIMAP1","GM2A","CR2","ATP2A2","HEBP2","FLNB","GRHPR","GPD2","MX1","PKIG","RCOR3","FLNB","PGAM5","FKBP1A","PKIG","ELMSAN1","POLR1E","WHSC1L1","ITGB3","CLASRP","FAM129C","RAB30","HIRIP3","LDHB","GP9","PARP9","TST","DTX3L","APOL3","GPD2","RAB30","AKAP2","ANXA2","TBXAS1","CD38","EFHD2","MX1","DOCK10","GNAO1","TRIM25","ATMIN","SLC9A3R1","ATP1B3","GRHPR","GPD2","AMPD3","POLD2","ZYX","PTPN1","GPD2","ACSL3","DTX3L","ANXA2","NFATC2IP","GRHPR","GPD2","PRAF2","PITPNM2","CABIN1","CKAP4","ITGB7","ANXA2"],["P52630","P52630","P09543","Q96BY6","Q9Y5Z4","P52209","O43772","P52630","Q9BW71","P04083","Q9Y2B9","Q96BY6","P00491","P43304","Q8WWP7","P17900","P20023","P16615","Q9Y5Z4","O75369","Q9UBQ7","P43304","P20591","Q9Y2B9","Q9P2K3","O75369","Q96HS1","P62942","Q9Y2B9","Q6PJG2","Q9GZS1","Q9BZ95","P05106","Q8N2M8","Q86XR2","Q15771","Q9BW71","P07195","P14770","Q8IXQ6","Q16762","Q8TDB6","O95236","P43304","Q15771","Q9Y2D5","P07355","P24557","P28907","Q96C19","P20591","Q96BY6","P09471","Q14258","O43313","O14745","P54709","Q9UBQ7","P43304","Q01432","P49005","Q15942","P18031","P43304","O95573","Q8TDB6","P07355","Q8NCF5","Q9UBQ7","P43304","O60831","Q9BZ72","Q9Y6J0","Q07065","P26010","P07355"],["-2.58e+00","-2.43e+00","3.36e+00","2.42e+00","2.47e+00","1.91e+00","-2.61e+00","-4.04e+00","2.47e+00","-2.16e+01","1.06e+01","2.28e+00","4.33e+00","3.05e+00","-1.95e+01","-7.13e+00","9.64e+00","-1.94e+00","2.77e+00","-5.23e+00","1.96e+00","2.56e+00","-1.87e+01","4.80e+00","3.50e+00","-5.95e+00","-2.16e+00","-5.10e+00","3.98e+00","7.35e+00","1.96e+00","-2.82e+00","-1.06e+01","-1.07e+01","9.94e+00","8.20e+00","2.27e+00","-2.47e+00","-1.66e+01","-2.21e+00","-4.37e+00","-1.96e+00","-5.35e+00","2.27e+00","5.60e+00","-5.97e+00","-2.92e+00","-5.66e+00","-2.32e+01","-8.80e+00","-5.57e+00","3.73e+00","3.21e+01","-5.59e+00","-6.88e+00","-9.68e+00","2.31e+00","1.87e+00","3.43e+00","-5.15e+00","7.07e+00","-1.43e+01","3.03e+00","2.23e+00","-2.42e+00","-1.94e+00","-3.46e+00","4.10e+00","3.26e+00","2.37e+00","-2.99e+00","8.99e+00","3.50e+00","1.19e+01","1.30e+01","-2.27e+00"],["2.45e-08","2.52e-07","4.10e-07","5.97e-07","8.22e-07","1.12e-06","1.56e-06","1.92e-06","2.42e-06","3.19e-06","3.24e-06","3.52e-06","3.68e-06","4.15e-06","4.35e-06","5.56e-06","6.73e-06","6.92e-06","6.92e-06","7.45e-06","7.55e-06","7.57e-06","7.74e-06","9.65e-06","9.98e-06","1.10e-05","1.11e-05","1.22e-05","1.27e-05","1.27e-05","1.35e-05","1.37e-05","1.40e-05","1.45e-05","1.52e-05","1.93e-05","1.95e-05","2.05e-05","2.08e-05","2.10e-05","2.18e-05","2.24e-05","2.27e-05","2.27e-05","2.38e-05","2.39e-05","2.40e-05","2.44e-05","2.45e-05","2.51e-05","2.54e-05","2.56e-05","2.68e-05","2.75e-05","2.77e-05","2.81e-05","2.86e-05","2.89e-05","2.94e-05","3.02e-05","3.02e-05","3.04e-05","3.08e-05","3.20e-05","3.25e-05","3.30e-05","3.30e-05","3.46e-05","3.51e-05","3.52e-05","3.56e-05","3.85e-05","3.95e-05","4.00e-05","4.11e-05","4.13e-05"],["4.50e-03","2.31e-02","2.50e-02","2.74e-02","3.02e-02","3.43e-02","4.09e-02","4.40e-02","4.92e-02","5.20e-02","5.20e-02","5.20e-02","5.20e-02","5.31e-02","5.31e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","7.32e-02","7.32e-02","7.55e-02","7.55e-02","7.76e-02","7.76e-02","7.76e-02","7.76e-02","7.76e-02","7.76e-02","7.84e-02","7.99e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","9.04e-02","9.04e-02","9.04e-02","9.04e-02","9.21e-02","9.21e-02","9.21e-02","9.21e-02","9.81e-02","9.92e-02","9.92e-02","9.98e-02","9.98e-02"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Drug<\/th>\n      <th>symbol<\/th>\n      <th>id<\/th>\n      <th>logFC<\/th>\n      <th>P.Value<\/th>\n      <th>adj.P.Val<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="correlation-plot-of-selected-candidates" class="section level3">
+<h3>Correlation plot of selected candidates</h3>
+<pre class="r"><code>plotDrugCorScatter &lt;- function(inputTab, x, y, x_lab = &quot;X&quot;, y_lab = &quot;Y&quot;, title = &quot;&quot;,
+                           col = NULL, showR2 = TRUE, annoPos = &quot;right&quot;,
+                           dotCol = colList, textCol=&quot;darkred&quot;) {
+
+  #prepare table for plotting
+  plotTab &lt;- tibble(x = inputTab[[x]],y=inputTab[[y]])
+  if (!is.null(col)) plotTab &lt;- mutate(plotTab, status = inputTab[[col]])
+  plotTab &lt;- filter(plotTab, !is.na(x), !is.na(y))
+
+  #prepare annotation values
+  corRes &lt;- cor.test(plotTab$x, plotTab$y)
+  pval &lt;- formatNum(corRes$p.value, digits = 1, format = &quot;e&quot;)
+  Rval &lt;- formatNum(corRes$estimate, digits = 1, format = &quot;e&quot;)
+  R2val &lt;- formatNum(corRes$estimate^2, digits = 1, format = &quot;e&quot;)
+  Nval &lt;- nrow(plotTab)
+  annoP &lt;- bquote(italic(&quot;P&quot;)~&quot;=&quot;~.(pval))
+
+  if (showR2) {
+    annoCoef &lt;-  bquote(R^2~&quot;=&quot;~.(R2val))
+  } else {
+    annoCoef &lt;- bquote(R~&quot;=&quot;~.(Rval))
+  }
+  annoN &lt;- bquote(N~&quot;=&quot;~.(Nval))
+
+  corPlot &lt;- ggplot(plotTab, aes(x = x, y = y))
+
+  if (!is.null(col)) {
+    corPlot &lt;- corPlot + geom_point(aes(fill = status), shape =21, size =3) +
+      scale_fill_manual(values = dotCol)
+  } else {
+    corPlot &lt;- corPlot + geom_point(fill = dotCol[1], shape =21, size=3)
+  }
+
+  corPlot &lt;- corPlot +   geom_smooth(formula = y~x,method = &quot;lm&quot;, se=FALSE, color = &quot;grey50&quot;, linetype =&quot;dashed&quot; )
+
+  if (annoPos == &quot;right&quot;) {
+
+    corPlot &lt;- corPlot + annotate(&quot;text&quot;, x = max(plotTab$x), y = Inf, label = annoN,
+                                  hjust=1, vjust =2, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = max(plotTab$x), y = Inf, label = annoP,
+               hjust=1, vjust =4, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = max(plotTab$x), y = Inf, label = annoCoef,
+               hjust=1, vjust =6, size = 5, parse = FALSE, col= textCol)
+
+  } else if (annoPos== &quot;left&quot;) {
+    corPlot &lt;- corPlot + annotate(&quot;text&quot;, x = min(plotTab$x), y = Inf, label = annoN,
+                                  hjust=0, vjust =2, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = min(plotTab$x), y = Inf, label = annoP,
+               hjust=0, vjust =4, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = min(plotTab$x), y = Inf, label = annoCoef,
+               hjust=0, vjust =6, size = 5, parse = FALSE, col= textCol)
+  }
+  corPlot &lt;- corPlot + ylab(y_lab) + xlab(x_lab) + ggtitle(title) +
+    scale_y_continuous(labels = scales::number_format(accuracy = 0.1)) +
+    scale_x_continuous(labels = scales::number_format(accuracy = 0.1)) +
+    theme_full
+  corPlot
+}</code></pre>
+<pre class="r"><code>pairList &lt;- list(c(&quot;Cobimetinib&quot;,&quot;STAT2&quot;),c(&quot;Venetoclax&quot;,&quot;PGD&quot;),c(&quot;Idelalisib&quot;, &quot;HEBP2&quot;))
+plotList &lt;- lapply(pairList, function(pair) {
+  textCol &lt;- &quot;darkred&quot;
+  drugName &lt;- pair[1]
+  proteinName &lt;- pair[2]
+  id &lt;- rownames(protCLL)[match(proteinName, rowData(protCLL)$hgnc_symbol)]
+  plotTab &lt;- tibble(patID = colnames(viabMat), 
+                    viab = viabMat[drugName,],
+                    expr = proMat[id,]) %&gt;%
+    mutate(IGHV = protCLL[,patID]$IGHV.status,
+           trisomy12 = protCLL[,patID]$trisomy12) %&gt;%
+    mutate(trisomy12 = ifelse(trisomy12 ==1,&quot;yes&quot;,&quot;no&quot;)) %&gt;%
+    filter(!is.na(viab),!is.na(expr))
+  
+  pval &lt;- formatNum(filter(resTab.sig, Drug == drugName, symbol == proteinName)$P.Value, digits = 1, format = &quot;e&quot;)
+  Rval &lt;- sprintf(&quot;%1.2f&quot;,cor(plotTab$viab, plotTab$expr))
+  Nval &lt;- nrow(plotTab)
+  annoP &lt;- bquote(italic(&quot;P&quot;)~&quot;=&quot;~.(pval))
+  annoN &lt;- bquote(N~&quot;=&quot;~.(Nval))
+  annoCoef &lt;- bquote(R~&quot;=&quot;~.(Rval))
+
+  corPlot &lt;- ggplot(plotTab, aes(x = viab, y = expr)) + 
+    geom_point(aes(col = trisomy12, shape = IGHV), size=5) +
+    scale_shape_manual(values = c(M = 19, U = 1)) + 
+    scale_color_manual(values = c(yes = colList[2], no = colList[3])) +
+    geom_smooth(formula = y~x,method = &quot;lm&quot;, se=FALSE, color = &quot;grey50&quot;, linetype =&quot;dashed&quot; ) +
+    ggtitle(sprintf(&quot;%s ~ %s&quot;, drugName, proteinName)) +
+    ylab(&quot;Protein expression&quot;) + xlab(&quot;Viability after treatment&quot;) +
+    theme_full +
+    theme(legend.position = &quot;bottom&quot;) 
+
+  if (Rval &lt; 0) annoPos &lt;- &quot;right&quot; else annoPos &lt;- &quot;left&quot;
+  
+  if (annoPos == &quot;right&quot;) {
+
+    corPlot &lt;- corPlot + annotate(&quot;text&quot;, x = max(plotTab$viab), y = Inf, label = annoN,
+                                  hjust=1, vjust =2, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = max(plotTab$viab), y = Inf, label = annoP,
+               hjust=1, vjust =4, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = max(plotTab$viab), y = Inf, label = annoCoef,
+               hjust=1, vjust =6, size = 5, parse = FALSE, col= textCol)
+
+  } else if (annoPos== &quot;left&quot;) {
+    corPlot &lt;- corPlot + annotate(&quot;text&quot;, x = min(plotTab$viab), y = Inf, label = annoN,
+                                  hjust=0, vjust =2, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = min(plotTab$viab), y = Inf, label = annoP,
+               hjust=0, vjust =4, size = 5, parse = FALSE, col= textCol) +
+      annotate(&quot;text&quot;, x = min(plotTab$viab), y = Inf, label = annoCoef,
+               hjust=0, vjust =6, size = 5, parse = FALSE, col= textCol)
+  }
+  
+  corPlot &lt;- corPlot + ylab(&quot;Protein expression&quot;) + xlab(&quot;Viability after treatment&quot;) + 
+    scale_y_continuous(labels = scales::number_format(accuracy = 0.1)) +
+    scale_x_continuous(labels = scales::number_format(accuracy = 0.1))
+
+  corPlot
+})
+
+
+drugCor &lt;- cowplot::plot_grid(plotlist = plotList, ncol =3)
+drugCor</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-9-1.png" width="1152" style="display: block; margin: auto;" /></p>
+</div>
+<div id="association-test-with-blocking-for-ighv-and-trisomy12" class="section level3">
+<h3>Association test with blocking for IGHV and trisomy12</h3>
+<pre class="r"><code>testList &lt;- filter(resTab.auc, adj.P.Val &lt; 0.1)
+resTab.auc.block &lt;- lapply(seq(nrow(testList)),function(i) {
+  pair &lt;- testList[i,]
+  expr &lt;- proMat[pair$id,]
+  viab &lt;- viabMat[pair$Drug, ]
+  ighv &lt;- protCLL[,colnames(viabMat)]$IGHV.status
+  tri12 &lt;- protCLL[,colnames(viabMat)]$trisomy12
+  res &lt;- anova(lm(viab~ighv+tri12+expr))
+  data.frame(id = pair$id, P.Value = res[&quot;expr&quot;,]$`Pr(&gt;F)`, symbol = pair$symbol,
+             Drug = pair$Drug,
+             P.Value.IGHV = res[&quot;ighv&quot;,]$`Pr(&gt;F)`,P.Value.trisomy12 = res[&quot;tri12&quot;,]$`Pr(&gt;F)`,
+             P.Value.noBlock = pair$P.Value,
+             stringsAsFactors = FALSE)
+  
+}) %&gt;% bind_rows() %&gt;% mutate(adj.P.Val = p.adjust(P.Value, method = &quot;BH&quot;)) %&gt;% arrange(P.Value)</code></pre>
+<p>Assocations that are still significant</p>
+<pre class="r"><code>resTab.sig %&gt;% mutate_if(is.numeric, formatC, digits=2, format= &quot;e&quot;) %&gt;%
+  DT::datatable()</code></pre>
+<div id="htmlwidget-e0d2c6e79f3c926924f1" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e0d2c6e79f3c926924f1">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76"],["Cobimetinib","Trametinib","Afatinib","Cobimetinib","Duvelisib","Venetoclax","Cobimetinib","SCH772984","Cobimetinib","Tofacitinib","KU-55933","Trametinib","Venetoclax","Duvelisib","Tofacitinib","JNK-IN-8","Tozasertib","Cobimetinib","Idelalisib","Ganetespib","Trametinib","Dasatinib","BMS-509744","PRT062607","Selinexor","Dasatinib","Cobimetinib","MK-2206","Duvelisib","MK-2206","Cobimetinib","Venetoclax","10058-F4","Sunitinib","BMS-509744","Imatinib","Trametinib","Cobimetinib","Selisistat","Trametinib","Cobimetinib","Trametinib","Tozasertib","Cobimetinib","Tozasertib","JNK-IN-8","Duvelisib","Selinexor","KU-55933","MK-2206","Cobimetinib","SCH772984","KU-55933","MK-2206","Tofacitinib","Tofacitinib","Venetoclax","Cobimetinib","PRT062607","Selinexor","MK-2206","Tofacitinib","AZD8055","Trametinib","PRT062607","Cobimetinib","Idelalisib","Rapamycin","SCH772984","Ibrutinib","Afatinib","Menin-MLL Inhibitor","Rapamycin","Quizartinib","EPZ-6438","Cobimetinib"],["STAT2","STAT2","CNP","DOCK10","HEBP2","PGD","SLC25A20","STAT2","HIRIP3","ANXA1","PKIG","DOCK10","PNP","GPD2","GIMAP1","GM2A","CR2","ATP2A2","HEBP2","FLNB","GRHPR","GPD2","MX1","PKIG","RCOR3","FLNB","PGAM5","FKBP1A","PKIG","ELMSAN1","POLR1E","WHSC1L1","ITGB3","CLASRP","FAM129C","RAB30","HIRIP3","LDHB","GP9","PARP9","TST","DTX3L","APOL3","GPD2","RAB30","AKAP2","ANXA2","TBXAS1","CD38","EFHD2","MX1","DOCK10","GNAO1","TRIM25","ATMIN","SLC9A3R1","ATP1B3","GRHPR","GPD2","AMPD3","POLD2","ZYX","PTPN1","GPD2","ACSL3","DTX3L","ANXA2","NFATC2IP","GRHPR","GPD2","PRAF2","PITPNM2","CABIN1","CKAP4","ITGB7","ANXA2"],["P52630","P52630","P09543","Q96BY6","Q9Y5Z4","P52209","O43772","P52630","Q9BW71","P04083","Q9Y2B9","Q96BY6","P00491","P43304","Q8WWP7","P17900","P20023","P16615","Q9Y5Z4","O75369","Q9UBQ7","P43304","P20591","Q9Y2B9","Q9P2K3","O75369","Q96HS1","P62942","Q9Y2B9","Q6PJG2","Q9GZS1","Q9BZ95","P05106","Q8N2M8","Q86XR2","Q15771","Q9BW71","P07195","P14770","Q8IXQ6","Q16762","Q8TDB6","O95236","P43304","Q15771","Q9Y2D5","P07355","P24557","P28907","Q96C19","P20591","Q96BY6","P09471","Q14258","O43313","O14745","P54709","Q9UBQ7","P43304","Q01432","P49005","Q15942","P18031","P43304","O95573","Q8TDB6","P07355","Q8NCF5","Q9UBQ7","P43304","O60831","Q9BZ72","Q9Y6J0","Q07065","P26010","P07355"],["-2.58e+00","-2.43e+00","3.36e+00","2.42e+00","2.47e+00","1.91e+00","-2.61e+00","-4.04e+00","2.47e+00","-2.16e+01","1.06e+01","2.28e+00","4.33e+00","3.05e+00","-1.95e+01","-7.13e+00","9.64e+00","-1.94e+00","2.77e+00","-5.23e+00","1.96e+00","2.56e+00","-1.87e+01","4.80e+00","3.50e+00","-5.95e+00","-2.16e+00","-5.10e+00","3.98e+00","7.35e+00","1.96e+00","-2.82e+00","-1.06e+01","-1.07e+01","9.94e+00","8.20e+00","2.27e+00","-2.47e+00","-1.66e+01","-2.21e+00","-4.37e+00","-1.96e+00","-5.35e+00","2.27e+00","5.60e+00","-5.97e+00","-2.92e+00","-5.66e+00","-2.32e+01","-8.80e+00","-5.57e+00","3.73e+00","3.21e+01","-5.59e+00","-6.88e+00","-9.68e+00","2.31e+00","1.87e+00","3.43e+00","-5.15e+00","7.07e+00","-1.43e+01","3.03e+00","2.23e+00","-2.42e+00","-1.94e+00","-3.46e+00","4.10e+00","3.26e+00","2.37e+00","-2.99e+00","8.99e+00","3.50e+00","1.19e+01","1.30e+01","-2.27e+00"],["2.45e-08","2.52e-07","4.10e-07","5.97e-07","8.22e-07","1.12e-06","1.56e-06","1.92e-06","2.42e-06","3.19e-06","3.24e-06","3.52e-06","3.68e-06","4.15e-06","4.35e-06","5.56e-06","6.73e-06","6.92e-06","6.92e-06","7.45e-06","7.55e-06","7.57e-06","7.74e-06","9.65e-06","9.98e-06","1.10e-05","1.11e-05","1.22e-05","1.27e-05","1.27e-05","1.35e-05","1.37e-05","1.40e-05","1.45e-05","1.52e-05","1.93e-05","1.95e-05","2.05e-05","2.08e-05","2.10e-05","2.18e-05","2.24e-05","2.27e-05","2.27e-05","2.38e-05","2.39e-05","2.40e-05","2.44e-05","2.45e-05","2.51e-05","2.54e-05","2.56e-05","2.68e-05","2.75e-05","2.77e-05","2.81e-05","2.86e-05","2.89e-05","2.94e-05","3.02e-05","3.02e-05","3.04e-05","3.08e-05","3.20e-05","3.25e-05","3.30e-05","3.30e-05","3.46e-05","3.51e-05","3.52e-05","3.56e-05","3.85e-05","3.95e-05","4.00e-05","4.11e-05","4.13e-05"],["4.50e-03","2.31e-02","2.50e-02","2.74e-02","3.02e-02","3.43e-02","4.09e-02","4.40e-02","4.92e-02","5.20e-02","5.20e-02","5.20e-02","5.20e-02","5.31e-02","5.31e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","6.18e-02","7.32e-02","7.32e-02","7.55e-02","7.55e-02","7.76e-02","7.76e-02","7.76e-02","7.76e-02","7.76e-02","7.76e-02","7.84e-02","7.99e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","8.95e-02","9.04e-02","9.04e-02","9.04e-02","9.04e-02","9.21e-02","9.21e-02","9.21e-02","9.21e-02","9.81e-02","9.92e-02","9.92e-02","9.98e-02","9.98e-02"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Drug<\/th>\n      <th>symbol<\/th>\n      <th>id<\/th>\n      <th>logFC<\/th>\n      <th>P.Value<\/th>\n      <th>adj.P.Val<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+<p>The above mentioned pairs are still significant.</p>
+</div>
+</div>
+<div id="variance-explained" class="section level2">
+<h2>Variance explained</h2>
+<p><strong>Test whether the protein expression can explain additional variance in drug response compared to genetic alone</strong></p>
+<p>Prepare genomics</p>
+<pre class="r"><code>geneMat &lt;-  patMeta[match(colnames(proMat), patMeta$Patient.ID),] %&gt;%
+  select(Patient.ID, IGHV.status, del11p:U1) %&gt;%
+  mutate_if(is.factor, as.character) %&gt;% mutate(IGHV.status = ifelse(IGHV.status == &quot;M&quot;, 1,0)) %&gt;%
+  mutate_at(vars(-Patient.ID), as.numeric) %&gt;% #assign a few unknown mutated cases to wildtype 
+  mutate_all(replace_na,0) %&gt;%
+  data.frame() %&gt;% column_to_rownames(&quot;Patient.ID&quot;)
+
+
+geneMat &lt;- geneMat[,apply(geneMat,2, function(x) sum(x %in% 1, na.rm = TRUE))&gt;=5] %&gt;% as.matrix()</code></pre>
+<p><strong>Genes that will be included in the multivariate model</strong></p>
+<pre class="r"><code>colnames(geneMat)</code></pre>
+<pre><code>[1] &quot;IGHV.status&quot; &quot;del11q&quot;      &quot;del13q&quot;      &quot;trisomy12&quot;   &quot;DDX3X&quot;      
+[6] &quot;EGR2&quot;        &quot;NOTCH1&quot;      &quot;SF3B1&quot;       &quot;TP53&quot;       </code></pre>
+<pre class="r"><code>compareR2 &lt;- function(Drug, protName, geneMat) {
+  viab &lt;- viabMat[Drug,]
+  protID &lt;- unique(filter(resTab.sig, symbol == protName)$id)
+  expr &lt;- proMat[protID,]
+
+  tabGene &lt;- data.frame(geneMat)
+  tabGene[[&quot;viab&quot;]] &lt;- viab
+  tabCom &lt;- tabGene
+  tabCom[[protName]] &lt;- expr
+  
+  r2Prot &lt;- summary(lm(viab~expr))$r.squared
+  r2Gene &lt;- summary(lm(viab~., data=tabGene))$r.squared
+  r2Com &lt;- summary(lm(viab~., data=tabCom))$r.squared
+  
+  plotTab &lt;- tibble(model = c(&quot;genetics&quot;,paste0(protName, &quot; expression&quot;),sprintf(&quot;genetics + \n%s expression&quot;,protName)),
+                    R2 = c(r2Gene, r2Prot, r2Com))
+  
+  ggplot(plotTab, aes(x=model, y = R2)) + geom_bar(aes(fill = model),stat=&quot;identity&quot;, width=0.6) + coord_flip() +
+     ggtitle(Drug) + ylab(&quot;Variance expalained (R2)&quot;) + xlab(&quot;&quot;) +
+    scale_fill_manual(values = colList[4:6]) + theme_full +theme(legend.position = &quot;none&quot;) 
+}</code></pre>
+<pre class="r"><code>plotList &lt;- lapply(pairList, function(p) {
+  compareR2(p[1],p[2],geneMat)
+})
+plot_grid(plotlist= plotList, ncol= 1)</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-15-1.png" width="576" style="display: block; margin: auto;" /> Based on the plot of R2 values, including protein expression in multi-variate model could explain additional variance in drug responses compared to genetic alone. For Venetoclax, using a single protein expression value of PGD already explain more variance than genetics.</p>
+<pre class="r"><code>stat2Bar &lt;- plotList[[1]]
+stat2Bar</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-16-1.png" width="480" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="protein-markers-for-clincial-outcomes" class="section level1">
+<h1>Protein markers for clincial outcomes</h1>
+<div id="uni-variate-model-to-identify-proteins-associated-with-outcomes" class="section level2">
+<h2>Uni-variate model to identify proteins associated with outcomes</h2>
+<pre class="r"><code>protCLL.sub &lt;- protCLL[!rowData(protCLL)$chromosome_name %in% c(&quot;X&quot;,&quot;Y&quot;),]
+protMat &lt;- assays(protCLL.sub)[[&quot;count&quot;]]
+
+survTab &lt;- survT %&gt;% filter(patID %in% colnames(protCLL)) %&gt;%
+  select(patID, OS, died, TTT, treatedAfter) %&gt;%
+  dplyr::rename(patientID = patID)</code></pre>
+<pre class="r"><code>uniRes.ttt &lt;- lapply(rownames(protMat), function(n) {
+  testTab &lt;- mutate(survTab, expr = protMat[n, patientID])
+  com(testTab$expr, testTab$TTT, testTab$treatedAfter, TRUE) %&gt;%
+    mutate(id = n)
+}) %&gt;% bind_rows() %&gt;% mutate(p.adj = p.adjust(p, method = &quot;BH&quot;)) %&gt;%
+  arrange(p) %&gt;% mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
+  mutate(outcome = &quot;TTT&quot;)
+
+uniRes.os &lt;- lapply(rownames(protMat), function(n) {
+  testTab &lt;- mutate(survTab, expr = protMat[n, patientID])
+  com(testTab$expr, testTab$OS, testTab$died, TRUE) %&gt;%
+    mutate(id = n)
+}) %&gt;% bind_rows() %&gt;% mutate(p.adj = p.adjust(p, method = &quot;BH&quot;)) %&gt;%
+  arrange(p) %&gt;% mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
+  mutate(outcome = &quot;OS&quot;)
+
+uniRes &lt;- bind_rows(uniRes.ttt, uniRes.os) %&gt;%
+  mutate(p.adj = p.adjust(p, method = &quot;BH&quot;))</code></pre>
+<div id="a-table-showing-significant-associations" class="section level3">
+<h3>A table showing significant associations</h3>
+<pre class="r"><code>uniRes %&gt;% filter(p.adj &lt; 0.1) %&gt;% mutate_if(is.numeric, formatC, digits=2,format=&quot;e&quot;) %&gt;%
+  select(name, p, HR, p.adj, outcome) %&gt;% DT::datatable()</code></pre>
+<div id="htmlwidget-3ba85d6ad0273fe2dc19" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3ba85d6ad0273fe2dc19">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68"],["TRMT10C","PRMT5","NME2","CLTB","PHF1","TPD52L2","ADAM10","BOP1","MTX1","HSPD1","PAICS","PYGB","SIRT5","MTCH2","HSPE1","MRPL46","RCN1","COQ3","RAB14","RELA","NFATC2","PMPCA","PMPCB","ATAD3A","MTX2","CAPN1","MRPL44","VDAC1","PES1","PURA","STAT5A","TSC22D4","MEF2C","NHP2","NME1","CCDC51","TOMM70A","YLPM1","TBL3","GLS","OXLD1","MRPL14","TMOD3","TPD52","DDX27","DTYMK","ALDH1B1","L2HGDH","PCCA","MRPL50","AFG3L2","MRRF","CDKN1B","RRS1","LACTB2","USP24","HBG1","AP3B1","PCCB","MAP2K1","WDR12","PIK3CD","ATP13A1","KIAA0430","IST1","GNAI2","RRAS2","DHCR7"],["4.15e-06","6.41e-06","1.28e-05","1.31e-05","1.49e-05","1.54e-05","2.05e-05","2.20e-05","2.34e-05","3.32e-05","3.64e-05","4.61e-05","5.15e-05","5.57e-05","6.46e-05","6.52e-05","7.03e-05","9.01e-05","9.05e-05","9.89e-05","1.25e-04","1.26e-04","1.79e-04","1.86e-04","1.93e-04","2.28e-04","2.52e-04","2.66e-04","2.73e-04","2.92e-04","3.06e-04","3.21e-04","3.21e-04","3.43e-04","3.48e-04","3.63e-04","3.96e-04","4.11e-04","4.15e-04","4.21e-04","4.33e-04","4.38e-04","4.49e-04","4.53e-04","4.63e-04","4.64e-04","4.66e-04","4.89e-04","4.89e-04","5.05e-04","5.35e-04","5.61e-04","5.74e-04","6.39e-04","6.69e-04","6.70e-04","6.95e-04","7.06e-04","7.14e-04","7.40e-04","7.82e-04","7.82e-04","8.32e-04","8.40e-04","4.17e-04","4.70e-04","6.19e-04","6.54e-04"],["4.35e+00","3.21e+00","3.74e+00","2.67e-01","3.66e-01","2.69e-01","3.73e-01","2.59e+00","3.54e+00","2.43e+00","2.84e+00","3.43e-01","2.58e+00","2.51e+00","2.06e+00","2.63e+00","2.77e+00","2.54e+00","4.84e-01","4.38e-01","4.46e-01","2.44e+00","2.62e+00","2.23e+00","2.75e+00","4.01e-01","2.45e+00","2.88e+00","2.64e+00","5.60e-01","5.20e-01","4.98e-01","5.58e-01","2.55e+00","2.50e+00","2.87e+00","2.03e+00","2.72e+00","2.43e+00","2.29e+00","2.24e+00","2.10e+00","4.83e-01","4.54e-01","2.20e+00","2.29e+00","2.67e+00","2.19e+00","2.82e+00","2.17e+00","2.33e+00","2.28e+00","4.36e-01","2.49e+00","2.13e+00","5.07e-01","2.04e+00","5.18e-01","2.70e+00","3.88e-01","2.13e+00","4.41e-01","2.17e+00","2.12e+00","2.63e-01","1.66e-01","3.49e-01","2.87e+00"],["2.08e-02","2.08e-02","2.08e-02","2.08e-02","2.08e-02","2.08e-02","2.10e-02","2.10e-02","2.10e-02","2.68e-02","2.68e-02","3.11e-02","3.20e-02","3.22e-02","3.30e-02","3.30e-02","3.34e-02","3.85e-02","3.85e-02","4.00e-02","4.62e-02","4.62e-02","6.25e-02","6.25e-02","6.25e-02","7.09e-02","7.54e-02","7.61e-02","7.61e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.75e-02","7.86e-02","8.17e-02","8.40e-02","8.44e-02","9.03e-02","9.03e-02","9.03e-02","9.17e-02","9.17e-02","9.17e-02","9.35e-02","9.59e-02","9.59e-02","1.00e-01","1.00e-01","7.75e-02","7.75e-02","8.94e-02","9.03e-02"],["TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","OS","OS","OS","OS"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>name<\/th>\n      <th>p<\/th>\n      <th>HR<\/th>\n      <th>p.adj<\/th>\n      <th>outcome<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div id="selection-protein-markers-independent-of-known-risks-using-multi-vairate-model" class="section level2">
+<h2>Selection protein markers independent of known risks using multi-vairate model</h2>
+<p>Prepare data</p>
+<pre class="r"><code>#table of known risks
+riskTab &lt;- select(survTab, patientID) %&gt;%
+  left_join(patMeta[,c(&quot;Patient.ID&quot;,&quot;IGHV.status&quot;,&quot;TP53&quot;,&quot;trisomy12&quot;,&quot;del17p&quot;,&quot;gender&quot;)], by = c(patientID = &quot;Patient.ID&quot;)) %&gt;% 
+  mutate(TP53 = as.numeric(as.character(TP53)),
+         del17p = as.numeric(as.character(del17p))) %&gt;%
+  mutate(`TP53.del17p` = as.numeric(TP53 | del17p),
+         IGHV = factor(ifelse(IGHV.status %in% &quot;U&quot;,1,0))) %&gt;%
+  select(-TP53, -del17p,-IGHV.status) %&gt;%
+  mutate_if(is.numeric, as.factor) %&gt;%
+  dplyr::rename(sex=gender) %&gt;%
+  mutate(age = survT[match(patientID, survT$patID),]$age) %&gt;%
+  mutate(age = age/10) %&gt;%
+  select(patientID, sex, age, trisomy12,`TP53.del17p`, IGHV)</code></pre>
+<p>Multi-variate test</p>
+<pre class="r"><code>cTab.ttt &lt;- lapply(filter(uniRes, outcome == &quot;TTT&quot;, p.adj &lt;=0.1)$id, function(n) {
+  risk0 &lt;- riskTab
+  expr &lt;- protMat[n,]
+  expr &lt;- (expr - mean(expr,na.rm=TRUE))/sd(expr,na.rm = TRUE)
+  risk1 &lt;- riskTab %&gt;% mutate(protExpr = expr[patientID])
+  res0 &lt;- summary(runCox(survTab, risk0, &quot;TTT&quot;,&quot;treatedAfter&quot;))
+  fullModel &lt;- runCox(survTab, risk1, &quot;TTT&quot;,&quot;treatedAfter&quot;)
+  res1 &lt;- summary(fullModel)
+  tibble(id = n, c0 = res0$concordance[1], c1 = res1$concordance[1],
+         se0 = res0$concordance[2],se1 = res1$concordance[2],
+         ci0 = se0*1.96, ci1 = se1*1.96,
+         p = res1$coefficients[&quot;protExpr&quot;,5],
+         fullModel = list(fullModel))
+}) %&gt;% bind_rows() %&gt;% mutate(diffC = c1-c0) %&gt;%
+  arrange(desc(diffC)) %&gt;%
+  mutate(name=rowData(protCLL[id,])$hgnc_symbol,
+         outcome = &quot;TTT&quot;)
+
+cTab.os &lt;- lapply(filter(uniRes, outcome == &quot;OS&quot;, p.adj&lt;=0.1)$id, function(n) {
+  risk0 &lt;- riskTab
+  expr &lt;- protMat[n,]
+  expr &lt;- (expr - mean(expr,na.rm=TRUE))/sd(expr,na.rm = TRUE)
+  risk1 &lt;- riskTab %&gt;% mutate(protExpr = expr[patientID])
+  res0 &lt;- summary(runCox(survTab, risk0, &quot;OS&quot;,&quot;died&quot;))
+  fullModel &lt;- runCox(survTab, risk1, &quot;OS&quot;,&quot;died&quot;)
+  res1 &lt;- summary(fullModel)
+  
+  tibble(id = n, c0 = res0$concordance[1], c1 = res1$concordance[1],
+         se0 = res0$concordance[2],se1 = res1$concordance[2],
+         ci0 = se0*1.96, ci1 = se1*1.96,
+         p = res1$coefficients[&quot;protExpr&quot;,5],
+         fullModel = list(fullModel))
+}) %&gt;% bind_rows() %&gt;% mutate(diffC = c1-c0) %&gt;%
+  arrange(desc(diffC)) %&gt;%
+  mutate(name=rowData(protCLL[id,])$hgnc_symbol,
+         outcome = &quot;OS&quot;)
+
+cTab &lt;- bind_rows(cTab.ttt, cTab.os) %&gt;%
+  mutate(p.adj = p.adjust(p, method = &quot;BH&quot;)) %&gt;%
+  arrange(p)</code></pre>
+<div id="a-table-showing-idependent-protein-markers" class="section level3">
+<h3>A table showing idependent protein markers</h3>
+<pre class="r"><code>cTab %&gt;% filter(p.adj &lt; 0.1) %&gt;% mutate_if(is.numeric, formatC, digits=2,format=&quot;e&quot;) %&gt;%
+  select(name, p, p.adj, outcome) %&gt;% DT::datatable()</code></pre>
+<div id="htmlwidget-7a62aeb8b8945f8dc09e" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-7a62aeb8b8945f8dc09e">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66"],["PYGB","BOP1","CLTB","NME2","HSPD1","TRMT10C","PES1","PURA","TPD52L2","HBG1","TBL3","STAT5A","NHP2","PRMT5","PAICS","CAPN1","PHF1","SIRT5","MTX1","NME1","GLS","COQ3","RAB14","HSPE1","RRS1","DDX27","AP3B1","WDR12","MRPL46","OXLD1","ADAM10","PMPCB","TOMM70A","RELA","MTX2","PMPCA","CCDC51","RCN1","ALDH1B1","AFG3L2","MAP2K1","CDKN1B","TMOD3","PIK3CD","MRPL14","VDAC1","MRPL50","ATP13A1","PCCB","PCCA","MTCH2","NFATC2","YLPM1","MRRF","LACTB2","MRPL44","ATAD3A","L2HGDH","DTYMK","USP24","KIAA0430","TSC22D4","MEF2C","TPD52","GNAI2","RRAS2"],["1.37e-06","6.73e-06","1.61e-05","1.63e-05","1.81e-05","1.83e-05","1.85e-05","3.70e-05","3.96e-05","4.13e-05","4.19e-05","6.51e-05","8.45e-05","8.96e-05","1.30e-04","1.53e-04","1.55e-04","1.93e-04","2.25e-04","2.91e-04","3.56e-04","3.56e-04","5.41e-04","6.04e-04","6.21e-04","6.25e-04","8.86e-04","9.20e-04","9.57e-04","9.89e-04","1.03e-03","1.12e-03","1.26e-03","1.28e-03","1.34e-03","1.74e-03","1.77e-03","1.95e-03","2.25e-03","2.42e-03","2.94e-03","3.41e-03","3.51e-03","4.11e-03","4.14e-03","4.16e-03","4.19e-03","4.50e-03","5.24e-03","5.43e-03","5.82e-03","5.90e-03","6.11e-03","6.54e-03","6.70e-03","7.28e-03","9.73e-03","1.03e-02","1.13e-02","1.21e-02","2.52e-02","2.72e-02","2.93e-02","3.67e-02","3.87e-02","4.49e-02"],["9.33e-05","1.79e-04","1.79e-04","1.79e-04","1.79e-04","1.79e-04","1.79e-04","2.59e-04","2.59e-04","2.59e-04","2.59e-04","3.69e-04","4.35e-04","4.35e-04","5.91e-04","6.21e-04","6.21e-04","7.29e-04","8.06e-04","9.91e-04","1.10e-03","1.10e-03","1.60e-03","1.64e-03","1.64e-03","1.64e-03","2.23e-03","2.23e-03","2.24e-03","2.24e-03","2.27e-03","2.38e-03","2.55e-03","2.55e-03","2.60e-03","3.25e-03","3.25e-03","3.48e-03","3.93e-03","4.11e-03","4.87e-03","5.52e-03","5.56e-03","6.07e-03","6.07e-03","6.07e-03","6.07e-03","6.38e-03","7.27e-03","7.39e-03","7.72e-03","7.72e-03","7.84e-03","8.23e-03","8.28e-03","8.84e-03","1.16e-02","1.21e-02","1.30e-02","1.37e-02","2.81e-02","2.99e-02","3.17e-02","3.89e-02","4.05e-02","4.63e-02"],["TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","TTT","OS","OS"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>name<\/th>\n      <th>p<\/th>\n      <th>p.adj<\/th>\n      <th>outcome<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="forest-plot-of-selected-markers" class="section level3">
+<h3>Forest plot of selected markers</h3>
+<pre class="r"><code>plotHazard &lt;- function(survRes, protName, title = &quot;&quot;) {
+  sumTab &lt;- summary(survRes)$coefficients
+  confTab &lt;- summary(survRes)$conf.int
+  #correct feature name
+  nameOri &lt;- rownames(sumTab)
+  nameMod &lt;- substr(nameOri, 1, nchar(nameOri) -1)
+  plotTab &lt;- tibble(feature = rownames(sumTab),
+                    nameMod = substr(nameOri, 1, nchar(nameOri) -1),
+                    HR = sumTab[,2],
+                    p = sumTab[,5],
+                    Upper = confTab[,4],
+                    Lower = confTab[,3]) %&gt;%
+    mutate(feature = ifelse(nameMod %in% names(survRes$xlevels), nameMod, feature)) %&gt;%
+    mutate(feature = str_replace(feature, &quot;[.]&quot;,&quot;/&quot;)) %&gt;%
+    mutate(feature = str_replace(feature, &quot;[_]&quot;,&quot;-&quot;)) %&gt;%
+    mutate(feature = str_replace(feature, &quot;IGHV&quot;,&quot;IGHV-U&quot;)) %&gt;%
+    mutate(candidate = ifelse(feature == &quot;protExpr&quot;, &quot;yes&quot;,&quot;no&quot;)) %&gt;%
+    mutate(feature = ifelse(feature == &quot;protExpr&quot;, protName, feature)) %&gt;%
+    #arrange(desc(abs(p))) %&gt;% 
+    mutate(feature = factor(feature, levels = feature)) #%&gt;%
+    #mutate(type = ifelse(HR &gt;1 ,&quot;up&quot;,&quot;down&quot;)) %&gt;%
+   # mutate(Upper = ifelse(Upper &gt; 10, 10, Upper))
+
+  p &lt;- ggplot(plotTab, aes(x=feature, y = HR, color = candidate)) +
+    geom_hline(yintercept = 1, linetype = &quot;dotted&quot;) +
+    geom_point(position = position_dodge(width=0.8), size=3) +
+    geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.3, size=1) +
+    geom_text(position = position_nudge(x = 0.3),
+              aes(y = HR, label =  sprintf(&quot;italic(P)~&#39;=&#39;~&#39;%s&#39;&quot;,
+                                           formatNum(p, digits = 1))),
+              color = &quot;black&quot;, size =5, parse = TRUE) +
+    #expand_limits(y=c(-0.5,0))+
+    scale_color_manual(values = c(yes = &quot;darkred&quot;, no = &quot;black&quot;)) +
+    ggtitle(title) + scale_y_log10() +
+    ylab(&quot;Hazard ratio&quot;) +
+    coord_flip() +
+    theme_full +
+    theme(legend.position = &quot;none&quot;, axis.title.y = element_blank())
+  return(p)
+}</code></pre>
+<p><strong>PRMT5</strong></p>
+<pre class="r"><code>protName &lt;- &quot;PRMT5&quot;
+outcomeName &lt;- &quot;TTT&quot;
+survRes &lt;- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+hr.prmt5 &lt;- plotHazard(survRes, protName, outcomeName)
+hr.prmt5</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-24-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p><strong>PYGB</strong></p>
+<pre class="r"><code>protName &lt;- &quot;PYGB&quot;
+outcomeName &lt;- &quot;TTT&quot;
+survRes &lt;- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+hr.pygb &lt;- plotHazard(survRes, protName, outcomeName)
+hr.pygb</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-25-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p><strong>PES1</strong></p>
+<pre class="r"><code>protName &lt;- &quot;PES1&quot;
+outcomeName &lt;- &quot;TTT&quot;
+survRes &lt;- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+hr.pes1 &lt;- plotHazard(survRes, protName, outcomeName)
+hr.pes1</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-26-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p><strong>GNAI2</strong></p>
+<pre class="r"><code>protName &lt;- &quot;GNAI2&quot;
+outcomeName &lt;- &quot;OS&quot;
+survRes &lt;- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+plotHazard(survRes, protName, outcomeName)</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-27-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p><strong>RRAS2</strong></p>
+<pre class="r"><code>protName &lt;- &quot;RRAS2&quot;
+outcomeName &lt;- &quot;OS&quot;
+survRes &lt;- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+plotHazard(survRes, protName, outcomeName)</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-28-1.png" width="480" style="display: block; margin: auto;" /></p>
+</div>
+<div id="bar-plots-comparing-c-index" class="section level3">
+<h3>Bar plots comparing C-index</h3>
+<p><strong>TTT</strong></p>
+<pre class="r"><code>nameList &lt;- c(&quot;PRMT5&quot;,&quot;PYGB&quot;,&quot;PES1&quot;)
+cTab.sub &lt;- filter(cTab, outcome == &quot;TTT&quot;, name %in% nameList)
+plotList &lt;- lapply(seq(nrow(cTab.sub)), function(i) {
+  plotTab &lt;- tibble(model = c(&quot;knownRisks&quot;,&quot;plusProtein&quot;),
+                    cindex = c(cTab.sub[i,]$c0, cTab.sub[i,]$c1),
+                    ci = c(cTab.sub[i,]$ci0,cTab.sub[i,]$ci1))
+  ggplot(plotTab, aes(x=model, y=cindex, fill = model)) + 
+    geom_bar(stat=&quot;identity&quot;,width=0.6) + 
+    geom_errorbar(aes(ymin=cindex + ci, ymax = cindex-ci), width=0.5) +
+    theme_full+ scale_fill_manual(values = colList[6:7]) +
+    ggtitle(cTab.ttt[i,]$name) + theme(legend.position = &quot;none&quot;) +
+    
+    ylab(&quot;Harrell&#39;s C-index&quot;)
+})
+cTTT &lt;- plot_grid(plotlist = plotList, ncol =3)
+cTTT</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-29-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p><strong>OS</strong> (The associations with OS are not very reliable as we don’t have enough events)</p>
+<pre class="r"><code>nameList &lt;- c(&quot;GNAI2&quot;,&quot;RRAS2&quot;)
+cTab.sub &lt;- filter(cTab, outcome == &quot;OS&quot;, name %in% nameList)
+plotList &lt;- lapply(seq(nrow(cTab.sub)), function(i) {
+  plotTab &lt;- tibble(model = c(&quot;knownRisks&quot;,&quot;plusProtein&quot;),
+                    cindex = c(cTab.sub[i,]$c0, cTab.sub[i,]$c1),
+                    ci = c(cTab.sub[i,]$ci0,cTab.sub[i,]$ci1))
+  ggplot(plotTab, aes(x=model, y=cindex, fill = model)) + 
+    geom_bar(stat=&quot;identity&quot;,width=0.6) + 
+    geom_errorbar(aes(ymin=cindex + ci, ymax = cindex-ci), width=0.5) +
+    theme_full+ scale_fill_manual(values = colList[6:7]) +
+    ggtitle(cTab.ttt[i,]$name) + theme(legend.position = &quot;none&quot;) +
+    
+    ylab(&quot;Harrell&#39;s C-index&quot;)
+})
+plot_grid(plotlist = plotList, ncol =3)</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/unnamed-chunk-30-1.png" width="1152" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+</div>
+<div id="assemble-figure" class="section level1">
+<h1>Assemble figure</h1>
+<div id="main-text-figure" class="section level2">
+<h2>Main text figure</h2>
+<pre class="r"><code>leftCol &lt;- plot_grid(cTTT, drugBar, drugCor, ncol =1, rel_heights = c(0.3,0.4,0.4), labels = c(&quot;A&quot;,&quot;C&quot;,&quot;D&quot;), label_size =22)
+rightCol &lt;- plot_grid(hr.prmt5, stat2Bar, ncol =1, rel_heights = c(0.6,0.4), align = &quot;v&quot;, labels = c(&quot;B&quot;,&quot;E&quot;),label_size =22)
+
+plot_grid(leftCol, rightCol, ncol=2, rel_widths = c(0.7,0.3))</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/Figure5-1.png" width="1728" style="display: block; margin: auto;" /></p>
+<div id="supplementary" class="section level3">
+<h3>Supplementary</h3>
+<pre class="r"><code>plot_grid(hr.pygb, hr.pes1, ncol=2)</code></pre>
+<p><img src="figure/manuscript_S8_drugResponse_Outcomes.Rmd/suppl_multiCox-1.png" width="960" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS  10.16
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] latex2exp_0.4.0             forcats_0.5.1              
+ [3] stringr_1.4.0               dplyr_1.0.5                
+ [5] purrr_0.3.4                 readr_1.4.0                
+ [7] tidyr_1.1.3                 tibble_3.1.0               
+ [9] tidyverse_1.3.0             cowplot_1.1.1              
+[11] SummarizedExperiment_1.18.2 DelayedArray_0.14.1        
+[13] matrixStats_0.58.0          Biobase_2.48.0             
+[15] GenomicRanges_1.40.0        GenomeInfoDb_1.24.2        
+[17] IRanges_2.22.2              S4Vectors_0.26.1           
+[19] BiocGenerics_0.34.0         glmnet_4.1-1               
+[21] Matrix_1.3-2                maxstat_0.7-25             
+[23] survminer_0.4.9             ggpubr_0.4.0               
+[25] ggplot2_3.3.3               survival_3.2-7             
+[27] jyluMisc_0.1.5              pheatmap_1.0.12            
+[29] limma_3.44.3               
+
+loaded via a namespace (and not attached):
+  [1] readxl_1.3.1           backports_1.2.1        fastmatch_1.1-0       
+  [4] drc_3.0-1              workflowr_1.6.2        igraph_1.2.6          
+  [7] shinydashboard_0.7.1   splines_4.0.2          crosstalk_1.1.1       
+ [10] BiocParallel_1.22.0    TH.data_1.0-10         digest_0.6.27         
+ [13] foreach_1.5.1          htmltools_0.5.1.1      fansi_0.4.2           
+ [16] memoise_2.0.0          magrittr_2.0.1         cluster_2.1.1         
+ [19] openxlsx_4.2.3         annotate_1.66.0        modelr_0.1.8          
+ [22] sandwich_3.0-0         piano_2.4.0            colorspace_2.0-0      
+ [25] blob_1.2.1             rvest_1.0.0            haven_2.3.1           
+ [28] xfun_0.21              crayon_1.4.1           RCurl_1.98-1.2        
+ [31] jsonlite_1.7.2         genefilter_1.70.0      zoo_1.8-9             
+ [34] iterators_1.0.13       glue_1.4.2             gtable_0.3.0          
+ [37] zlibbioc_1.34.0        XVector_0.28.0         car_3.0-10            
+ [40] shape_1.4.5            abind_1.4-5            scales_1.1.1          
+ [43] mvtnorm_1.1-1          DBI_1.1.1              relations_0.6-9       
+ [46] rstatix_0.7.0          Rcpp_1.0.6             plotrix_3.8-1         
+ [49] xtable_1.8-4           bit_4.0.4              foreign_0.8-81        
+ [52] km.ci_0.5-2            DT_0.17                htmlwidgets_1.5.3     
+ [55] httr_1.4.2             fgsea_1.14.0           gplots_3.1.1          
+ [58] RColorBrewer_1.1-2     ellipsis_0.3.1         farver_2.1.0          
+ [61] XML_3.99-0.5           pkgconfig_2.0.3        sass_0.3.1            
+ [64] dbplyr_2.1.0           utf8_1.1.4             labeling_0.4.2        
+ [67] AnnotationDbi_1.50.3   tidyselect_1.1.0       rlang_0.4.10          
+ [70] later_1.1.0.1          cachem_1.0.4           munsell_0.5.0         
+ [73] cellranger_1.1.0       tools_4.0.2            visNetwork_2.0.9      
+ [76] cli_2.3.1              RSQLite_2.2.3          generics_0.1.0        
+ [79] broom_0.7.5            evaluate_0.14          fastmap_1.1.0         
+ [82] yaml_2.2.1             bit64_4.0.5            knitr_1.31            
+ [85] fs_1.5.0               zip_2.1.1              survMisc_0.5.5        
+ [88] caTools_1.18.1         nlme_3.1-152           mime_0.10             
+ [91] slam_0.1-48            xml2_1.3.2             rstudioapi_0.13       
+ [94] compiler_4.0.2         curl_4.3               ggsignif_0.6.1        
+ [97] marray_1.66.0          reprex_1.0.0           bslib_0.2.4           
+[100] stringi_1.5.3          highr_0.8              lattice_0.20-41       
+[103] shinyjs_2.0.0          KMsurv_0.1-5           vctrs_0.3.6           
+[106] pillar_1.5.1           lifecycle_1.0.0        jquerylib_0.1.3       
+[109] data.table_1.14.0      bitops_1.0-6           httpuv_1.5.5          
+[112] R6_2.5.0               promises_1.2.0.1       KernSmooth_2.23-18    
+[115] gridExtra_2.3          rio_0.5.26             codetools_0.2-18      
+[118] MASS_7.3-53.1          gtools_3.8.2           exactRankTests_0.8-31 
+[121] assertthat_0.2.1       rprojroot_2.0.2        withr_2.4.1           
+[124] multcomp_1.4-16        GenomeInfoDbData_1.2.3 mgcv_1.8-34           
+[127] hms_1.0.0              grid_4.0.2             rmarkdown_2.7         
+[130] carData_3.0-4          git2r_0.28.0           sets_1.0-18           
+[133] shiny_1.6.0            lubridate_1.7.10      </code></pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

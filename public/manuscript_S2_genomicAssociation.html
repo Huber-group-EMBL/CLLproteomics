@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Junyan Lu" />
+
+<meta name="date" content="2020-10-09" />
+
+<title>Section 2: Identifying proteins associated disease drivers in CLL</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">CLL Proteome</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://git.embl.de/jlu/Proteomics">
+    <span class="fa fa-gitlab"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Section 2: Identifying proteins associated disease drivers in CLL</h1>
+<h4 class="author">Junyan Lu</h4>
+<h4 class="date">2020-10-09</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2020-10-09
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>CLLproteomics_publish/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you'll want to first commit it to the Git repo. If you're still working on the analysis, you can ignore this warning. When you're finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it's best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200227code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200227)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200227code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200227)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgitembldejluProteomicstree3fb50c57fa6132d3779996e8364369f6fb4aea70targetblank3fb50c5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://git.embl.de/jlu/Proteomics/tree/3fb50c57fa6132d3779996e8364369f6fb4aea70" target="_blank">3fb50c5</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgitembldejluProteomicstree3fb50c57fa6132d3779996e8364369f6fb4aea70targetblank3fb50c5a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://git.embl.de/jlu/Proteomics/tree/3fb50c57fa6132d3779996e8364369f6fb4aea70" target="_blank">3fb50c5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/.Rhistory
+    Ignored:    analysis/figure/
+    Ignored:    analysis/manuscript_S1_Overview_cache/
+    Ignored:    code/.DS_Store
+    Ignored:    code/.Rhistory
+    Ignored:    data/.DS_Store
+    Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  analysis/.trisomy12_norm.pdf
+    Untracked:  analysis/manuscript_S1_Overview.Rmd
+    Untracked:  analysis/manuscript_S2_genomicAssociation.Rmd
+    Untracked:  analysis/manuscript_S3_trisomy12.Rmd
+    Untracked:  analysis/manuscript_S4_IGHV.Rmd
+    Untracked:  analysis/manuscript_S5_trisomy19.Rmd
+    Untracked:  analysis/manuscript_S6_del11q.Rmd
+    Untracked:  analysis/manuscript_S7_SF3B1.Rmd
+    Untracked:  analysis/manuscript_S8_drugResponse_Outcomes.Rmd
+    Untracked:  analysis/manuscript_S9_STAT2.Rmd
+    Untracked:  code/utils.R
+    Untracked:  data/Fig1A.png
+    Untracked:  data/ddsrna_enc.RData
+    Untracked:  data/exprCNV_enc.RData
+    Untracked:  data/gmts/
+    Untracked:  data/patMeta_enc.RData
+    Untracked:  data/pepCLL_lumos_enc.RData
+    Untracked:  data/pheno1000_enc.RData
+    Untracked:  data/proteins_in_complexes
+    Untracked:  data/proteomic_LUMOS_enc.RData
+    Untracked:  data/proteomic_timsTOF_enc.RData
+    Untracked:  data/survival_enc.RData
+    Untracked:  output/deResList.RData
+    Untracked:  output/deResList_timsTOF.RData
+    Untracked:  output/dxdCLL.RData
+    Untracked:  output/dxdCLL2.RData
+    Untracked:  output/splicingResults.RData
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/analysisSF3B1.Rmd
+    Deleted:    analysis/comparePlatforms.Rmd
+    Deleted:    analysis/compareProteomicsRNAseq.Rmd
+    Deleted:    analysis/correlateCLLPD.Rmd
+    Deleted:    analysis/correlateGenomic.Rmd
+    Deleted:    analysis/correlateGenomic_removePC.Rmd
+    Deleted:    analysis/correlateMIR.Rmd
+    Deleted:    analysis/correlateMethylationCluster.Rmd
+    Modified:   analysis/index.Rmd
+    Deleted:    analysis/predictOutcome.Rmd
+    Deleted:    analysis/processProteomics_LUMOS.Rmd
+    Deleted:    analysis/processProteomics_timsTOF.Rmd
+    Deleted:    analysis/qualityControl_LUMOS.Rmd
+    Deleted:    analysis/qualityControl_timsTOF.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="load-packages-and-datasets" class="section level1">
+<h1>Load packages and datasets</h1>
+<pre class="r"><code>library(limma)
+library(DESeq2)
+library(proDA)
+library(IHW)
+library(SummarizedExperiment)
+library(tidyverse)
+
+#load datasets
+load(&quot;../data/patMeta_enc.RData&quot;)
+load(&quot;../data/ddsrna_enc.RData&quot;)
+load(&quot;../data/proteomic_LUMOS_enc.RData&quot;)
+source(&quot;../code/utils.R&quot;)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c(&quot;png&quot;,&quot;pdf&quot;))</code></pre>
+</div>
+<div id="preprocessing" class="section level1">
+<h1>Preprocessing</h1>
+<div id="process-proteomics-data" class="section level2">
+<h2>Process proteomics data</h2>
+<pre class="r"><code>protCLL &lt;- protCLL[rowData(protCLL)$uniqueMap,]
+protMat &lt;- assays(protCLL)[[&quot;count&quot;]] #without imputation</code></pre>
+</div>
+<div id="prepare-genomic-background" class="section level2">
+<h2>Prepare genomic background</h2>
+<div id="get-mutations-with-at-least-5-cases" class="section level3">
+<h3>Get mutations with at least 5 cases</h3>
+<pre class="r"><code>geneMat &lt;-  patMeta[match(colnames(protMat), patMeta$Patient.ID),] %&gt;%
+  select(Patient.ID, IGHV.status, del11p:U1) %&gt;%
+  mutate_if(is.factor, as.character) %&gt;% mutate(IGHV.status = ifelse(IGHV.status == &quot;M&quot;, 1,0)) %&gt;%
+  mutate_at(vars(-Patient.ID), as.numeric) %&gt;% #assign a few unknown mutated cases to wildtype
+  data.frame() %&gt;% column_to_rownames(&quot;Patient.ID&quot;)
+
+
+geneMat &lt;- geneMat[,apply(geneMat,2, function(x) sum(x %in% 1, na.rm = TRUE))&gt;=5]</code></pre>
+<p><strong>Mutations that will be tested</strong></p>
+<pre class="r"><code>colnames(geneMat)</code></pre>
+<pre><code> [1] &quot;IGHV.status&quot; &quot;del11q&quot;      &quot;del13q&quot;      &quot;trisomy12&quot;   &quot;trisomy19&quot;  
+ [6] &quot;DDX3X&quot;       &quot;EGR2&quot;        &quot;NOTCH1&quot;      &quot;SF3B1&quot;       &quot;TP53&quot;       </code></pre>
+</div>
+<div id="plot-to-summarise-genomic-background" class="section level3">
+<h3>Plot to summarise genomic background</h3>
+<pre class="r"><code>sortTab &lt;- function(sumTab) {
+  i &lt;- ncol(sumTab)
+  #print(i)
+  if (i == 1) {
+    #print(rownames(sumTab)[order(sumTab[,i])])
+    return(rownames(sumTab)[order(sumTab[,i])])
+  }
+  orderRow &lt;- c(sortTab(sumTab[sumTab[,i]==0, seq(1,i-1), drop = FALSE]), sortTab(sumTab[sumTab[,i]==1, seq(1,i-1), drop = FALSE]))
+  return(orderRow)
+}
+
+geneMat.sort &lt;- geneMat
+geneMat.sort[is.na(geneMat.sort)] &lt;- 0
+sortedGene &lt;- names(sort(colSums(geneMat.sort)))
+geneMat.sort &lt;- geneMat.sort[,sortedGene]
+sortedPat &lt;- sortTab(geneMat.sort)</code></pre>
+<pre class="r"><code>plotTab &lt;- geneMat %&gt;% rownames_to_column(&quot;patID&quot;) %&gt;% mutate_all(as.character) %&gt;%
+  gather(key = &quot;gene&quot;, value = &quot;status&quot;, -patID) %&gt;%
+  mutate(gene = factor(gene, levels = sortedGene), patID = factor(patID, levels = sortedPat)) %&gt;%
+  mutate(status = ifelse(is.na(status),&quot;NA&quot;,status))
+
+ggplot(plotTab, aes(x=patID, y = gene, fill = status)) + 
+  geom_tile(color = &quot;black&quot;) +
+  theme_minimal() + 
+  scale_fill_manual(values = c(&quot;1&quot; = colList[4],&quot;0&quot; =&quot;white&quot;, &quot;NA&quot; = &quot;grey80&quot;)) +
+  theme(axis.text.x = element_text(angle = 90, hjust =1, vjust=0.5),
+        panel.grid = element_blank(), legend.position = &quot;none&quot;) +
+  ylab(&quot;&quot;) + xlab(&quot;Patient ID&quot;)</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/geneSummary-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+</div>
+<div id="differential-protein-expression-using-proda" class="section level1">
+<h1>Differential protein expression using proDA</h1>
+<div id="for-ighv-and-trisomy12" class="section level2">
+<h2>For IGHV and trisomy12</h2>
+<p>Fit the probailistic dropout model</p>
+<pre class="r"><code>designMat &lt;- geneMat[  ,c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
+fit &lt;- proDA(protMat, design = ~ .,
+             col_data = designMat)</code></pre>
+<p>Test for differentially expressed proteins</p>
+<pre class="r"><code>resList.ighvTri12 &lt;- lapply(c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;), function(n) {
+  contra &lt;- n
+  resTab &lt;- test_diff(fit, contra) %&gt;%
+    dplyr::rename(id = name, logFC = diff, t=t_statistic,
+                  P.Value = pval, adj.P.Val = adj_pval) %&gt;% 
+    mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
+    select(name, id, logFC, t, P.Value, adj.P.Val) %&gt;%  
+    arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
+    as_tibble()
+}) %&gt;% bind_rows()</code></pre>
+</div>
+<div id="test-for-other-variantions-blocking-for-ighv-and-trisomy12" class="section level2">
+<h2>Test for other variantions (blocking for IGHV and trisomy12)</h2>
+<p>Fit the probailistic dropout model and test for differentially expressed proteins</p>
+<pre class="r"><code>otherGenes &lt;- colnames(geneMat)[!colnames(geneMat)%in% c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
+resList &lt;- lapply(otherGenes, function(n) {
+  designMat &lt;- geneMat[,c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;,n)]
+  designMat &lt;- designMat[!is.na(designMat[[n]]),]
+  testMat &lt;- protMat[,rownames(designMat)]
+  
+  fit &lt;- proDA(testMat, design = ~ .,
+             col_data = designMat)
+  
+  contra &lt;- n
+  resTab &lt;- test_diff(fit, contra) %&gt;%
+    dplyr::rename(id = name, logFC = diff, t=t_statistic,
+                  P.Value = pval, adj.P.Val = adj_pval) %&gt;% 
+    mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
+    select(name, id, logFC, t, P.Value, adj.P.Val) %&gt;%  
+    arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
+    as_tibble()
+  resTab
+}) %&gt;% bind_rows()</code></pre>
+<p>Combine the results</p>
+<pre class="r"><code>resList &lt;- bind_rows(resList.ighvTri12, resList)
+
+#Adjusting p values
+
+#using BH
+resList &lt;- mutate(resList, adj.P.global = p.adjust(P.Value, method = &quot;BH&quot;))
+
+#using IHW
+ihwRes &lt;- ihw(P.Value ~ factor(Gene), data= resList, alpha=0.1)
+resList &lt;- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))</code></pre>
+<p>Save the results for re-using</p>
+<pre class="r"><code>save(resList, file = &quot;../output/deResList.RData&quot;)</code></pre>
+<p>Load the pre-calculated results (differential expression tests take long time.)</p>
+<pre class="r"><code>load(&quot;../output/deResList.RData&quot;)</code></pre>
+</div>
+</div>
+<div id="summarise-significant-associations" class="section level1">
+<h1>Summarise significant associations</h1>
+<div id="bar-plot-of-number-of-significant-associations-10-fdr" class="section level2">
+<h2>Bar plot of number of significant associations (10% FDR)</h2>
+<pre class="r"><code>plotTab &lt;- resList %&gt;% group_by(Gene) %&gt;%
+  summarise(nFDR.local = sum(adj.P.Val &lt;= 0.1),
+            nFDR.global = sum(adj.P.global &lt;= 0.1),
+            nFDR.IHW = sum(adj.P.IHW &lt;= 0.1),
+            nP = sum(P.Value &lt; 0.05))
+
+#use IHW for adjusting p-values
+resList &lt;- mutate(resList, adj.P.Val = adj.P.IHW)</code></pre>
+<pre class="r"><code>plotTab &lt;- arrange(plotTab, desc(nFDR.IHW)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
+ggplot(plotTab, aes(x=Gene, y = nFDR.IHW)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
+  geom_text(aes(label = paste0(&quot;n=&quot;, nFDR.IHW)),vjust=-1,col=colList[1]) + ylim(0,1200) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab(&quot;Number of associations\n(10% FDR)&quot;) + xlab(&quot;&quot;)</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/number_of_association-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="bar-plot-of-number-of-raw-p-value-0.05" class="section level2">
+<h2>Bar plot of number of raw P-value &lt; 0.05</h2>
+<pre class="r"><code>plotTab &lt;- arrange(plotTab, desc(nP)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
+ggplot(plotTab, aes(x=Gene, y = nP)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
+  geom_text(aes(label = paste0(&quot;n=&quot;, nP)),vjust=-1,col=colList[1]) + ylim(0,1500) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab(&quot;Number of associations\n(nominal P-value &lt; 0.05)&quot;) + xlab(&quot;&quot;)</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/number_of_association_pval-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="association-test-in-timstof-data" class="section level1">
+<h1>Association test in timsTOF data</h1>
+<div id="for-ighv-and-trisomy12-1" class="section level2">
+<h2>For IGHV and trisomy12</h2>
+<p>Load timsTOF data</p>
+<pre class="r"><code>load(&quot;../data/proteomic_timsTOF_enc.RData&quot;)
+protMat &lt;- assays(protCLL)[[&quot;count&quot;]] #without imputation</code></pre>
+<p>Genetic data</p>
+<pre class="r"><code>geneMat &lt;-  patMeta[match(colnames(protMat), patMeta$Patient.ID),] %&gt;%
+  select(Patient.ID, IGHV.status, trisomy12, SF3B1, trisomy19, del11q) %&gt;%
+  mutate_if(is.factor, as.character) %&gt;% mutate(IGHV.status = ifelse(IGHV.status == &quot;M&quot;, 1,0)) %&gt;%
+  mutate_at(vars(-Patient.ID), as.numeric) %&gt;% #assign a few unknown mutated cases to wildtype
+  data.frame() %&gt;% column_to_rownames(&quot;Patient.ID&quot;)</code></pre>
+<p>Fit the probailistic dropout model</p>
+<pre class="r"><code>designMat &lt;- geneMat[  ,c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
+fit &lt;- proDA(protMat, design = ~ .,
+             col_data = designMat)</code></pre>
+<p>Test for differentially expressed proteins</p>
+<pre class="r"><code>resList.ighvTri12 &lt;- lapply(c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;), function(n) {
+  contra &lt;- n
+  resTab &lt;- test_diff(fit, contra) %&gt;%
+    dplyr::rename(id = name, logFC = diff, t=t_statistic,
+                  P.Value = pval, adj.P.Val = adj_pval) %&gt;% 
+    mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
+    select(name, id, logFC, t, P.Value, adj.P.Val) %&gt;%  
+    arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
+    as_tibble()
+}) %&gt;% bind_rows()</code></pre>
+</div>
+<div id="test-for-other-variantions-blocking-for-ighv-and-trisomy12-1" class="section level2">
+<h2>Test for other variantions (blocking for IGHV and trisomy12)</h2>
+<p>Fit the probailistic dropout model and test for differentially expressed proteins</p>
+<pre class="r"><code>otherGenes &lt;- colnames(geneMat)[!colnames(geneMat)%in% c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
+resList &lt;- lapply(otherGenes, function(n) {
+  designMat &lt;- geneMat[,c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;,n)]
+  designMat &lt;- designMat[!is.na(designMat[[n]]),]
+  testMat &lt;- protMat[,rownames(designMat)]
+  
+  fit &lt;- proDA(testMat, design = ~ .,
+             col_data = designMat)
+  
+  contra &lt;- n
+  resTab &lt;- test_diff(fit, contra) %&gt;%
+    dplyr::rename(id = name, logFC = diff, t=t_statistic,
+                  P.Value = pval, adj.P.Val = adj_pval) %&gt;% 
+    mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
+    select(name, id, logFC, t, P.Value, adj.P.Val) %&gt;%  
+    arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
+    as_tibble()
+  resTab
+}) %&gt;% bind_rows()</code></pre>
+<p>Combine the results</p>
+<pre class="r"><code>resList &lt;- bind_rows(resList.ighvTri12, resList)
+
+#Adjusting p values
+
+#using BH
+resList &lt;- mutate(resList, adj.P.global = p.adjust(P.Value, method = &quot;BH&quot;))
+
+#using IHW
+ihwRes &lt;- ihw(P.Value ~ factor(Gene), data= resList, alpha=0.1)
+resList &lt;- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))</code></pre>
+<p>Save the results for re-using</p>
+<pre class="r"><code>save(resList, file = &quot;../output/deResList_timsTOF.RData&quot;)</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.6.0 (2019-04-26)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS  10.15.6
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] latex2exp_0.4.0             forcats_0.5.0              
+ [3] stringr_1.4.0               dplyr_1.0.0                
+ [5] purrr_0.3.4                 readr_1.3.1                
+ [7] tidyr_1.1.0                 tibble_3.0.3               
+ [9] ggplot2_3.3.2               tidyverse_1.3.0            
+[11] IHW_1.14.0                  proDA_1.1.2                
+[13] DESeq2_1.26.0               SummarizedExperiment_1.16.1
+[15] DelayedArray_0.12.3         BiocParallel_1.20.1        
+[17] matrixStats_0.56.0          Biobase_2.46.0             
+[19] GenomicRanges_1.38.0        GenomeInfoDb_1.22.1        
+[21] IRanges_2.20.2              S4Vectors_0.24.4           
+[23] BiocGenerics_0.32.0         limma_3.42.2               
+
+loaded via a namespace (and not attached):
+ [1] colorspace_1.4-1       ellipsis_0.3.1         rprojroot_1.3-2       
+ [4] htmlTable_2.0.1        XVector_0.26.0         base64enc_0.1-3       
+ [7] fs_1.4.2               rstudioapi_0.11        farver_2.0.3          
+[10] bit64_0.9-7            fansi_0.4.1            AnnotationDbi_1.48.0  
+[13] lubridate_1.7.9        xml2_1.3.2             splines_3.6.0         
+[16] geneplotter_1.64.0     knitr_1.29             Formula_1.2-3         
+[19] jsonlite_1.7.0         workflowr_1.6.2        broom_0.7.0           
+[22] annotate_1.64.0        cluster_2.1.0          dbplyr_1.4.4          
+[25] png_0.1-7              compiler_3.6.0         httr_1.4.1            
+[28] backports_1.1.8        assertthat_0.2.1       Matrix_1.2-18         
+[31] cli_2.0.2              later_1.1.0.1          acepack_1.4.1         
+[34] htmltools_0.5.0        tools_3.6.0            gtable_0.3.0          
+[37] glue_1.4.1             GenomeInfoDbData_1.2.2 Rcpp_1.0.5            
+[40] slam_0.1-47            cellranger_1.1.0       vctrs_0.3.1           
+[43] xfun_0.15              rvest_0.3.5            lifecycle_0.2.0       
+[46] XML_3.98-1.20          zlibbioc_1.32.0        scales_1.1.1          
+[49] hms_0.5.3              promises_1.1.1         RColorBrewer_1.1-2    
+[52] yaml_2.2.1             memoise_1.1.0          gridExtra_2.3         
+[55] rpart_4.1-15           latticeExtra_0.6-29    stringi_1.4.6         
+[58] RSQLite_2.2.0          genefilter_1.68.0      checkmate_2.0.0       
+[61] rlang_0.4.7            pkgconfig_2.0.3        bitops_1.0-6          
+[64] evaluate_0.14          lattice_0.20-41        lpsymphony_1.14.0     
+[67] labeling_0.3           htmlwidgets_1.5.1      bit_1.1-15.2          
+[70] tidyselect_1.1.0       magrittr_1.5           R6_2.4.1              
+[73] generics_0.0.2         Hmisc_4.4-0            DBI_1.1.0             
+[76] withr_2.2.0            pillar_1.4.6           haven_2.3.1           
+[79] foreign_0.8-71         survival_3.2-3         RCurl_1.98-1.2        
+[82] nnet_7.3-14            modelr_0.1.8           crayon_1.3.4          
+[85] fdrtool_1.2.15         rmarkdown_2.3          jpeg_0.1-8.1          
+[88] locfit_1.5-9.4         grid_3.6.0             readxl_1.3.1          
+[91] data.table_1.12.8      blob_1.2.1             git2r_0.27.1          
+[94] reprex_0.3.0           digest_0.6.25          xtable_1.8-4          
+[97] httpuv_1.5.4           munsell_0.5.0         </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

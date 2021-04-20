@@ -1,0 +1,813 @@
+---
+title: "Section 3: Proteomic signatures of trisomy12"
+author: "Junyan Lu"
+date: "2020-10-09"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: inline
+---
+
+#Load packages and datasets
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(limma)
+library(DESeq2)
+library(tidygraph)
+library(cowplot)
+library(igraph)
+library(ggraph)
+library(pheatmap)
+library(ComplexHeatmap)
+library(ggbeeswarm)
+library(SummarizedExperiment)
+library(tidyverse)
+
+#load datasets
+load("../data/patMeta_enc.RData")
+load("../data/ddsrna_enc.RData")
+load("../data/proteomic_LUMOS_enc.RData")
+load("../output/deResList.RData") #precalculated differential expression
+
+protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+source("../code/utils.R")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png","pdf"))
+
+```
+
+
+# Overview of differentially expressed proteins
+
+## A table of associations with 10% FDR
+```{r}
+resList <- filter(resList, Gene == "trisomy12") %>%
+  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
+  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
+resList %>% filter(adj.P.Val <= 0.1) %>% 
+  select(name, Chr,logFC, P.Value, adj.P.Val) %>%
+  mutate_if(is.numeric, formatC, digits=2) %>%
+  DT::datatable()
+```
+
+
+## Heatmap of differentially expressed proteins (1% FDR)
+```{r trisomy12_heatmap, fig.height=10, fig.width=10}
+proList <- filter(resList, !is.na(name), adj.P.Val < 0.01) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
+plotMat <- assays(protCLL)[["QRILC"]][proList,]
+rownames(plotMat) <- rowData(protCLL[proList,])$hgnc_symbol
+
+colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
+  select(Patient.ID, trisomy12, IGHV.status) %>%
+  data.frame() %>% column_to_rownames("Patient.ID")
+colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
+
+rowAnno <- rowData(protCLL)[proList,c("chromosome_name","hgnc_symbol"),drop=FALSE] %>% 
+  data.frame(stringsAsFactors = FALSE) %>%
+  mutate(onChr12 = ifelse(chromosome_name == "12","yes","no")) %>%
+  select(hgnc_symbol, onChr12) %>% data.frame() %>% column_to_rownames("hgnc_symbol")
+
+plotMat <- jyluMisc::mscale(plotMat, censor = 5)
+
+annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
+                IGHV.status = c(M = colList[4], U = colList[3]),
+                onChr12 = c(yes = colList[1],no = "white"))
+
+pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none",
+                   annotation_row = rowAnno,
+                   clustering_method = "ward.D2",
+                   color = colorRampPalette(c(colList[2],"white",colList[1]))(100),
+                   breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
+                   show_rownames = FALSE, show_colnames = FALSE,
+                   treeheight_row = 0)
+```
+
+## Summary of chromosome distribution (10% FDR)
+```{r trisomy12_chr_summary, fig.height=4, fig.width=7}
+plotTab <- filter(resList, adj.P.Val <=0.1) %>% mutate(change = ifelse(logFC>0,"Up regulated","Down regulated"),
+                              chromosome = ifelse(Chr %in% "12","chr12","other")) %>%
+  group_by(change, chromosome) %>% summarise(n = length(id))
+
+sigNumPlot <- ggplot(plotTab, aes(x=change, y=n, fill = chromosome)) + 
+  geom_bar(stat = "identity", width = 0.8,
+           position = position_dodge2(width = 6),
+           col = "black") +
+  geom_text(aes(label=n), 
+            position = position_dodge(width = 0.9),
+            size=4, hjust=-0.1)  +
+  scale_fill_manual(name = "", labels = c("chr12","other"), values = colList) +
+  coord_flip(ylim = c(0,600), expand = FALSE) + xlab("") + ylab("Number of significant associations (10% FDR)") + theme_half 
+sigNumPlot
+
+```
+
+
+## Volcano plot
+
+```{r trisomy12_volcano, fig.height=12, fig.width=12}
+plotTab <- resList 
+nameList <- c("PTPN11", "PLCG1", "GRB2", "SMAD2", "PYCARD", "STAT2")
+tri12Vocano <- plotVolcano(plotTab, fdrCut =0.1, x_lab="log2FoldChange", posCol = colList[1], negCol = colList[2],
+            plotTitle = "trisomy12", ifLabel = TRUE, labelList = nameList)
+tri12Vocano
+```
+
+## Boxplot plot of selected genes
+
+```{r trisomy12_selected_protein, fig.height=10, fig.width=10}
+protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID")
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12) %>%
+  mutate(status = ifelse(trisomy12 %in% 1,"trisomy12","WT"),
+         name = hgnc_symbol) %>%
+  mutate(status = factor(status, levels = c("WT","trisomy12")))
+pList <- plotBox(plotTab, pValTabel = resList, y_lab = "Protein expression")
+protBoxplot <- cowplot::plot_grid(plotlist= pList, ncol=2)
+protBoxplot
+```
+
+## Enrichment analysis
+
+### Barplot of enriched pathways
+```{r, fig.height=6, fig.width=12}
+gmts = list(H= "../data/gmts/h.all.v6.2.symbols.gmt",
+            KEGG = "../data/gmts/c2.cp.kegg.v6.2.symbols.gmt")
+inputTab <- resList %>% filter(adj.P.Val < 0.1, Gene == "trisomy12") %>%
+  mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>% filter(!is.na(name)) %>%
+  distinct(name, .keep_all = TRUE) %>%
+  select(name, t) %>% data.frame() %>% column_to_rownames("name")
+enRes <- list()
+enRes[["Proteins associated with trisomy12"]] <- runGSEA(inputTab, gmts$H, "page")
+
+p <- plotEnrichmentBar(enRes[[1]], pCut =0.1, ifFDR= TRUE, setName = "HALLMARK gene set", 
+                       title = names(enRes)[1], removePrefix = "HALLMARK_", insideLegend=TRUE)
+tri12Enrich <- cowplot::plot_grid(p)
+tri12Enrich
+```
+
+### Heatmaps of protein expression in enriched pathways
+
+```{r}
+resList.sig <- filter(resList, !is.na(name), adj.P.Val < 0.1) %>% distinct(name, .keep_all = TRUE) 
+plotMat <- assays(protCLL)[["QRILC"]][resList.sig$id,]
+rownames(plotMat) <- rowData(protCLL[rownames(plotMat),])$hgnc_symbol
+colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
+  select(Patient.ID, trisomy12) %>%
+  data.frame() %>% column_to_rownames("Patient.ID")
+colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
+
+rowAnno <- rowData(protCLL)[resList.sig$id,c("chromosome_name","hgnc_symbol"),drop=FALSE] %>% 
+  data.frame(stringsAsFactors = FALSE) %>%
+  mutate(onChr12 = ifelse(chromosome_name == "12","yes","no")) %>%
+  select(hgnc_symbol, onChr12) %>% data.frame() %>% column_to_rownames("hgnc_symbol")
+
+plotMat <- jyluMisc::mscale(plotMat, censor = 5)
+
+annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
+                IGHV.status = c(M = colList[3], U = colList[4]),
+                onChr12 = c(yes = colList[1],no = "white"))
+```
+
+```{r trisomy12_PI3K_heatmap, fig.height=5, fig.width=10}
+plotSetHeatmap(resList.sig, gmts$H, "HALLMARK_PI3K_AKT_MTOR_SIGNALING", plotMat, 
+               colAnno, rowAnno = rowAnno, annoCol = annoCol, highLight = nameList)
+```
+
+
+```{r, trisomy12_MTOR_heatmap, fig.height=8, fig.width=10}
+plotSetHeatmap(resList.sig, gmts$H, "HALLMARK_MTORC1_SIGNALING", plotMat, colAnno, rowAnno = rowAnno, annoCol = annoCol,
+                highLight = nameList)
+
+```
+
+# Compare with RNA sequencing data
+
+## Differentially expressed genes related to trisomy12
+
+Prepare RNA sequencing data
+```{r, cache=TRUE, autodep=TRUE}
+dds$diag <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$diagnosis
+dds$trisomy12 <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy12
+dds$IGHV <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$IGHV.status
+
+ddsCLL <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, dds$diag %in% "CLL" & !is.na(dds$IGHV) & !is.na(dds$trisomy12)]
+ddsCLL.vst <- varianceStabilizingTransformation(ddsCLL)
+```
+
+Differential expression
+```{r, cache=TRUE, autodep=TRUE}
+design(ddsCLL) <- ~ trisomy12 + IGHV
+deRes <- DESeq(ddsCLL)
+resTab <- results(deRes, contrast = c("trisomy12","1","0"), tidy = TRUE) %>%
+  mutate(name = rowData(ddsCLL[row,])$symbol) %>%
+  dplyr::rename(P.Value = pvalue)
+```
+
+### Boxplot of selected genes
+```{r trisomy12_selected_RNA, fig.height=10, fig.width=10}
+plotTab <- assay(ddsCLL.vst[match(nameList, rowData(ddsCLL.vst)$symbol),]) %>%
+  data.frame() %>% rownames_to_column("id") %>%
+  mutate(name = rowData(ddsCLL.vst[id,])$symbol) %>%
+  gather(key = "patID", value = "count", -id, -name) %>% 
+  mutate(trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12) %>%
+  mutate(status = ifelse(trisomy12 %in% 1,"trisomy12","WT"))  %>%
+  mutate(status = factor(status, levels = c("WT","trisomy12")))
+
+
+pList <- plotBox(plotTab, pValTabel = resTab, y_lab = "RNA expression")
+cowplot::plot_grid(plotlist= pList, ncol=2)
+```
+
+### Correlations between RNA and protein expression
+```{r trisomy12_protein_RNA_cor, fig.height=12, fig.width=9}
+rnaMat <- assay(ddsCLL.vst)
+protMat <- assays(protCLL)[["count"]]
+rownames(protMat) <- rowData(protCLL)$ensembl_gene_id
+overSample <- intersect(colnames(rnaMat), colnames(protMat))
+rnaMat <- rnaMat[,overSample]
+protMat <- protMat[,overSample]
+
+plotList <- lapply(nameList, function(n) {
+  geneId <- rownames(ddsCLL.vst)[match(n, rowData(ddsCLL.vst)$symbol)]
+  stopifnot(length(geneId) ==1)
+  plotTab <- tibble(x=rnaMat[geneId,],y=protMat[geneId,])
+  coef <- cor(plotTab$x, plotTab$y, use="pairwise.complete")
+  annoPos <- ifelse (coef > 0, "left","right")
+  plotCorScatter(plotTab, "x","y", showR2 = FALSE, annoPos = annoPos, x_lab = "RNA expression",
+                 y_lab ="Protein expression", title = n,dotCol = colList[4], textCol = colList[1])
+})
+cowplot::plot_grid(plotlist = plotList, ncol =2)
+```
+
+# Buffering of gene dosage effect
+
+## Visualizing gene dosage effect on protein and RNA level
+
+```{r}
+#Load combined copy number and expression data for visualization
+load("../data/exprCNV_enc.RData")
+
+
+protExprTab <- allProtTab %>% mutate(type = "Protein")
+rnaExprTab <- filter(allRnaTab, id %in% protExprTab$id) %>% mutate(type = "RNA")
+
+comExprTab <- bind_rows(rnaExprTab, protExprTab) %>%
+  mutate(trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12) %>%
+  filter(!is.na(trisomy12)) %>% mutate(cnv = ifelse(trisomy12 %in% 1, "trisomy12","WT"))
+
+```
+
+
+### Proteins/RNAs on Chr12 have higher expressions in trisomy12 samples compared to other samples
+```{r dosage_effect, fig.height=3, fig.width=8}
+plotTab <- filter(comExprTab, ChromID %in% "chr12") %>%
+  group_by(id,type) %>% mutate(med=mean(expr)) %>% mutate(expr = (expr-med)) %>%
+  group_by(id, symbol, cnv, type) %>% summarise(meanExpr = mean(expr, na.rm=TRUE)) %>%
+  ungroup()
+
+dosagePlot <- ggplot(plotTab, aes(x=meanExpr, fill = cnv, col=cnv)) + 
+  geom_histogram(position = "identity", alpha=0.5) + facet_wrap(~type, scale = "free") +
+  scale_fill_manual(values = c(WT = "grey80", trisomy12 = colList[1]), name = "") +
+  scale_color_manual(values = c(WT = "grey80", trisomy12 = colList[1]), name = "") +
+  theme_full + xlab("Deviation to mean expression") +
+  theme(strip.text = element_text(size =20))
+
+dosagePlot
+
+```
+
+### The variation of expression is higher in RNA than protein
+
+#### For proteins/RNA on chr12
+```{r expression_variation_chr12, fig.height=3, fig.width=4}
+plotTab <- filter(comExprTab, ChromID %in% "chr12") %>%
+  group_by(id, symbol, type) %>% summarise(varExp = sd(expr, na.rm=TRUE)) %>%
+  ungroup()
+
+ggplot(plotTab, aes(x=varExp,  fill = type, col=type)) + 
+  geom_histogram(position = "identity", alpha=0.5) + 
+  scale_fill_manual(values = c(RNA = colList[4], Protein = colList[5]), name = "") +
+  scale_color_manual(values = c(RNA = colList[4], Protein = colList[5]), name = "") +
+  theme_full + xlab("Standard deviation of expression")
+```
+
+#### The same trend can be oberserved for non-chr12 proteins/RNAs, but less striking
+```{r expression_variation_other, fig.height=3, fig.width=4}
+plotTab <- filter(comExprTab, !ChromID %in% "chr12") %>%
+  group_by(id, symbol, type) %>% summarise(varExp = sd(expr, na.rm=TRUE)) %>%
+  ungroup()
+
+ggplot(plotTab, aes(x=varExp, fill = type, col=type)) + 
+  geom_histogram(position = "identity", alpha=0.5) + 
+  scale_fill_manual(values = c(RNA = colList[4], Protein = colList[5]), name = "") +
+  scale_color_manual(values = c(RNA = colList[4], Protein = colList[5]), name = "") +
+  theme_full + xlab("Standard deviation of expression")
+```
+
+### The overall scale of change is higher in RNA expression than protein expression
+```{r log2FC_chr12, fig.height=3, fig.width=4}
+plotTab <- filter(comExprTab, ChromID %in% "chr12") %>%
+  group_by(id, symbol, type, cnv) %>% summarise(meanExp = mean(expr, na.rm=TRUE)) %>%
+  ungroup() %>% spread(key = cnv, value = meanExp) %>%
+  mutate(log2FC = log2(trisomy12/WT))
+
+ggplot(plotTab, aes(x=log2FC, fill = type, col=type)) + 
+  geom_histogram(position = "identity", alpha=0.5, bins = 100) + 
+  scale_fill_manual(values = c(RNA = colList[3], Protein = colList[4]), name = "") +
+  scale_color_manual(values = c(RNA = colList[3], Protein = colList[4]), name = "") +
+  coord_cartesian(xlim=c(-0.25,0.25))+
+  geom_vline(xintercept = 0, col = colList[1], linetype = "dashed") +
+  theme_full + xlab("log2 Fold Change")
+```
+
+
+## Analyzing buffering effect
+
+### Detect buffered and non-buffered proteins
+
+Preprocessing protein and RNA data
+```{r}
+#subset samples and genes
+overSampe <- intersect(colnames(ddsCLL), colnames(protCLL))
+overGene <- intersect(rownames(ddsCLL), rowData(protCLL)$ensembl_gene_id)
+ddsSub <- ddsCLL[overGene, overSampe]
+protSub <- protCLL[match(overGene, rowData(protCLL)$ensembl_gene_id),overSampe]
+rowData(ddsSub)$uniprotID <- rownames(protSub)[match(rownames(ddsSub),rowData(protSub)$ensembl_gene_id)]
+
+#vst
+ddsSub.vst <- varianceStabilizingTransformation(ddsSub)
+```
+
+Differential expression on RNA level
+```{r}
+ddsSub$trisomy12 <- patMeta[match(ddsSub$PatID,patMeta$Patient.ID),]$trisomy12
+ddsSub$IGHV <- patMeta[match(ddsSub$PatID, patMeta$Patient.ID),]$IGHV.status
+design(ddsSub) <- ~ trisomy12 + IGHV
+deRes <- DESeq(ddsSub, betaPrior = TRUE)
+rnaRes <- results(deRes, name = "trisomy121", tidy = TRUE) %>%
+  dplyr::rename(geneID = row, log2FC.rna = log2FoldChange, 
+                pvalue.rna = pvalue, padj.rna = padj, stat.rna= stat) %>%
+  select(geneID, log2FC.rna, pvalue.rna, padj.rna, stat.rna)
+```
+
+Protein abundance changes related to trisomy12
+```{r, cache=TRUE, autodep=TRUE}
+fdrCut <- 0.1
+protRes <- resList %>% filter(Gene == "trisomy12") %>%
+    dplyr::rename(uniprotID = id, 
+                  pvalue = P.Value, padj = adj.P.IHW,
+                  chrom = Chr) %>% 
+    mutate(geneID = rowData(protCLL[uniprotID,])$ensembl_gene_id) %>%
+    select(name, uniprotID, geneID, chrom, logFC, pvalue, padj, t) %>%
+    dplyr::rename(stat =t) %>%
+    arrange(pvalue) %>% as_tibble() 
+```
+
+Combine
+```{r}
+allRes <- left_join(protRes, rnaRes, by = "geneID")
+```
+
+**Only chr12 genes that are up-regulated are considered.**
+```{r}
+bufferTab <- allRes %>% filter(chrom %in% 12,stat.rna > 0) %>%
+  ungroup() %>%
+  mutate(stat.prot.sqrt = sqrt(stat),
+         stat.prot.center = stat.prot.sqrt - mean(stat.prot.sqrt)) %>%
+  mutate(score = -stat.prot.center*stat.rna) %>%
+  mutate(ifBuffer = case_when(
+    padj < 0.1 & padj.rna < 0.1 & stat > 0 ~ "non-Buffered",
+    padj > 0.1 & padj.rna < 0.1 ~ "Buffered",
+    padj < 0.1 & padj.rna > 0.1 & stat > 0 ~ "Enhanced",
+    TRUE ~ "Undetermined"
+  )) %>%
+  arrange(desc(score))
+```
+
+### Summary plot
+```{r sum_buffer_number, fig.width=6, fig.height=4}
+sumTab <- bufferTab %>% group_by(ifBuffer) %>%
+  summarise(n = length(name))
+
+bufferPlot <- ggplot(sumTab, aes(x=ifBuffer, y = n)) + 
+  geom_bar(aes(fill = ifBuffer), stat="identity", width = 0.7) + 
+  geom_text(aes(label = paste0("n=", n)),vjust=-1,col=colList[1]) +
+  scale_fill_manual(values =c(Buffered = colList[1],
+                              Enhanced = colList[4],
+                              `non-Buffered` = colList[2],
+                              Undetermined = "grey50")) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5),
+                     legend.position = "none") +
+  ylab("Number of proteins") + ylim(0,120) +xlab("")
+bufferPlot
+```
+
+### Plot example cases of buffered and non-buffered proteins
+```{r buffer_example, fig.height=11, fig.width=10}
+protList <- c("PTPN11","DDX51","BCAT1", "METTL7A")
+geneList <- bufferTab[match(protList, bufferTab$name),]$geneID
+pList <- lapply(geneList, function(i) {
+  tabProt <- allProtTab %>% filter(id == i) %>%
+    select(id, patID, symbol,expr) %>% dplyr::rename(protExpr = expr)
+  tabRna <- allRnaTab %>% filter(id == i) %>%
+    select(id, patID, expr) %>% dplyr::rename(rnaExpr = expr)
+  plotTab <- left_join(tabProt, tabRna, by = c("id","patID")) %>% 
+    filter(!is.na(protExpr), !is.na(rnaExpr)) %>%
+    mutate(trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12) %>%
+    mutate(trisomy12 = ifelse(trisomy12 %in% 1, "yes","no"))
+  p <- ggplot(plotTab, aes(x=rnaExpr, y = protExpr)) +
+    geom_point(aes(col=trisomy12)) + 
+    geom_smooth(formula =  y~x, method="lm",se=FALSE, color = "grey50", linetype ="dashed" ) + 
+    ggtitle(unique(plotTab$symbol)) +
+    ylab("Protein expression") + xlab("RNA expression") +
+    scale_color_manual(values =c(yes = colList[1],no=colList[2])) +
+    theme_full + theme(legend.position = "bottom")
+  ggExtra::ggMarginal(p, type = "histogram", groupFill = TRUE)
+  })
+cowplot::plot_grid(plotlist = pList, ncol=2)
+```
+
+
+### Enrichment of buffer and non-buffered proteins
+
+#### Non-buffered prpteins
+```{r trisomy12_nonBuffer_enrich, fig.height=4, fig.width=8}
+protList <- filter(bufferTab, ifBuffer == "non-Buffered")$name
+refList <- unique(protExprTab$symbol)
+enRes <- runFisher(protList, refList, gmts$H, pCut =0.05, ifFDR = FALSE,removePrefix = "HALLMARK_",
+                   plotTitle = "Non-buffered proteins", insideLegend = TRUE,
+                   setName = "HALLMARK gene set")
+bufferEnrich <- enRes$enrichPlot + theme(plot.margin = margin(1,3,1,1, unit = "cm"))
+bufferEnrich
+```
+
+#### Buffered proteins
+```{r}
+protList <- filter(bufferTab, ifBuffer == "Buffered")$name
+enRes <- runFisher(protList, refList, gmts$H, pCut =0.05, ifFDR = FALSE)
+```
+No enrichment
+
+## Plot expression on genomic coordiate
+
+```{r}
+load("../data/exprCNV_enc.RData")
+patBack <- dplyr::filter(patMeta, Patient.ID %in% unique(allProtTab$patID)) %>%
+  dplyr::select(Patient.ID, trisomy12) %>%
+  dplyr::rename(patID = Patient.ID) %>%
+  mutate_all(as.character) %>%
+  mutate_at(vars(-patID),str_replace, "1","yes") %>%
+  mutate_at(vars(-patID),str_replace, "0","no")
+```
+
+```{r}
+plotExprVar <- function(gene, chr, patBack, allBand, allLine, allProtTab, allRnaTab, protLine = NULL,
+                        region = c(-Inf,Inf),ifTrend = FALSE, normalize = TRUE, maxVal =2, minVal=-2) {
+  
+  #table for cyto band
+  bandTab <- filter(allBand, ChromID == chr, chromStart >= region[1], chromEnd <= region[2]) %>%
+    mutate(chromMid = chromMid)
+  
+  #table for expression
+  plotProtTab <- filter(allProtTab, ChromID == chr, start_position >= region[1], end_position <= region[2]) %>%
+    mutate_if(is.factor,as.character)
+  plotRnaTab <- filter(allRnaTab, ChromID == chr, start_position >= region[1], end_position <= region[2]) %>%
+    mutate_if(is.factor,as.character)
+  
+  
+  #summarise group mean
+  plotProtTab <- plotProtTab %>% 
+    mutate(group = patBack[match(patID, patBack$patID),][[gene]]) %>%
+    filter(!is.na(group)) %>%
+    group_by(id, group) %>% mutate(meanExpr = mean(expr, na.rm=TRUE)) %>%
+    distinct(group, id,.keep_all = TRUE) %>% ungroup()
+
+  plotRnaTab <- plotRnaTab %>%
+    mutate(group = patBack[match(patID, patBack$patID),][[gene]]) %>%
+    filter(!is.na(group)) %>%
+    group_by(id, group) %>% mutate(meanExpr = mean(expr, na.rm=TRUE)) %>%
+    distinct(group, id,.keep_all = TRUE) %>% ungroup()
+  
+  if (!is.null(protLine)) {
+    bufferLineTab <- plotProtTab %>%
+      select(symbol, mid_position, meanExpr, group) %>%
+      filter(symbol %in% protLine) %>%
+      pivot_wider(names_from = group, values_from = meanExpr) %>%
+      mutate(lowVal = map2_dbl(yes, no, min),
+             highVal = map2_dbl(yes, no, max))
+  } else bufferLineTab <- NULL
+  
+
+  xMax <- max(bandTab$chromEnd, na.rm = T)
+  
+  #main plot for Protein
+  gPro <- ggplot() + 
+    geom_rect(data=bandTab, mapping=aes(xmin=chromStart, xmax=chromEnd, ymin=minVal+0.5, ymax=maxVal-0.5, 
+                                        fill=Colour, label = band), alpha=0.1) +
+    geom_text(data=bandTab, mapping=aes(label=band, x=chromMid), y=maxVal-0.5, hjust =1, angle = 90, size=2.5) 
+    
+  if (!is.null(protLine)) {
+    gPro <- gPro + geom_segment(data = bufferLineTab, aes(x=mid_position, xend = mid_position, 
+                                        y=lowVal, yend = highVal), linetype = "dashed") 
+    
+  }
+  
+  gPro <- gPro + geom_rect(data = plotProtTab, 
+            mapping=aes(xmin=start_position,
+                        xmax=end_position, ymin=meanExpr, ymax=meanExpr+0.1,
+                        fill = group, label = symbol)) +
+    scale_x_continuous(expand=c(0,0),limits = c(0,xMax)) +
+    xlab("Genomic position [Mb]") + 
+    ylab("Expression (normalized by length)") + 
+    scale_fill_manual(values = c(even = "white",odd = "grey50",
+                                yes = "darkred", no = "darkgreen")) +
+    scale_color_manual(values = c(yes = "darkred",no = "darkgreen")) +
+    ggtitle(paste0("Protein expression","(",chr,")")) +
+    theme(plot.title = element_text(face = "bold", size = 10),
+        legend.position = "none",
+        panel.background = element_blank(),
+        panel.grid.major = element_line(colour="grey90", size=0.1))
+  
+    if (ifTrend) {
+      gPro <- gPro + geom_smooth(data =filter(plotProtTab, expr >0), 
+                mapping = aes(y=meanExpr, x= mid_position,
+                              color = group), 
+                formula = y ~ x, method = "loess", se=FALSE, span=0.5,
+                size =0.2, alpha=0.5)
+    }
+    
+  #main plot for RNA
+  gRna <- ggplot() + 
+    geom_rect(data=bandTab, mapping=aes(xmin=chromStart, xmax=chromEnd, ymin=minVal, ymax=maxVal, 
+                                        fill=Colour, label = band), alpha=0.1) +
+    geom_text(data=bandTab, mapping=aes(label=band, x=chromMid), y=maxVal, hjust =1, angle = 90, size=2.5) +
+    geom_rect(data = plotRnaTab, 
+            mapping=aes(xmin=start_position,
+                        xmax=end_position, ymin=meanExpr, ymax=meanExpr+0.1,
+                        fill = group, label = symbol)) +
+    scale_x_continuous(expand=c(0,0),limits = c(0,xMax)) +
+    xlab("Genomic position [Mb]") + 
+    ylab("Expression Z-score") + 
+    scale_fill_manual(values = c(even = "white",odd = "grey50",
+                                yes = "darkred", no = "darkgreen")) +
+    scale_color_manual(values = c(yes = "darkred", no = "darkgreen")) +
+    ggtitle(paste0("RNA expression","(",chr,")")) +
+    theme(plot.title = element_text(face = "bold", size = 10),
+        legend.position = "none",
+        panel.background = element_blank(),
+        panel.grid.major = element_line(colour="grey90", size=0.1))
+  
+    if (ifTrend) {
+      gRna <- gRna + geom_smooth(data =filter(plotRnaTab), 
+                mapping = aes(y=meanExpr, x= mid_position,
+                              color = group), 
+                formula = y ~ x, method = "loess", se=FALSE, span=0.2,
+                size =0.2, alpha=0.5)
+    }
+    #for legend
+    ## if the patient has CNV data
+    lgTab <- tibble(x= seq(6),y=seq(6),
+                    Expression = c(rep("yes",3), rep("no",3)))
+  
+    lg <- ggplot(lgTab, aes(x=x,y=y)) +
+        geom_point(aes(fill = Expression), shape =22,size=3) +
+        scale_fill_manual(values = c(yes = "darkred", no = "darkgreen"), name = gene) +
+        theme(legend.position = "bottom")
+    
+    lg <- get_legend(lg)
+    
+    return(list(plotPro = gPro, plotRNA = gRna, legend = lg))
+}
+```
+
+Normalize protein and RNA expression
+```{r}
+normalized <- TRUE
+#if perform normalization
+if (normalized) {
+  #for protein
+  exprMat <- select(allProtTab,patID, id,expr) %>% 
+    spread(key = patID, value =expr) %>% data.frame() %>% 
+    column_to_rownames("id") %>% as.matrix()
+  qm <- jyluMisc::mscale(exprMat, useMad = F)
+  normTab <- data.frame(qm) %>% rownames_to_column("id") %>%
+    gather(key = "patID", value = "expr", -id)
+  allProtTab <- select(allProtTab, -expr) %>% left_join(normTab, by = c("patID","id"))
+
+
+  #for RNA
+  exprMat <- select(allRnaTab,patID, id,expr) %>% 
+    spread(key = patID, value =expr) %>% data.frame() %>% 
+    column_to_rownames("id") %>% as.matrix()
+  qm <- jyluMisc::mscale(exprMat, useMad = F)
+  normTab <- data.frame(qm) %>% rownames_to_column("id") %>%
+    gather(key = "patID", value = "expr", -id)
+  allRnaTab <- select(allRnaTab, -expr) %>% left_join(normTab, by = c("patID","id"))
+}
+```
+
+```{r trisomy12_geneCoord, fig.height=8, fig.width=10}
+g <- plotExprVar("trisomy12","chr12",patBack,allBand, allLine, 
+                 allProtTab, allRnaTab, ifTrend = TRUE)
+plot_grid(g$plotRNA, g$plotPro, g$legend, ncol = 1, rel_heights = c(1,1,0.2))
+
+```
+
+# Protein complex analysis
+
+## Preprocessing
+
+Processing protein complex data
+```{r}
+int_pairs <- read_delim("../data/proteins_in_complexes", delim = "\t") %>%
+  mutate(Reactome = grepl("Reactome",Evidence_supporting_the_interaction),
+         Corum = grepl("Corum",Evidence_supporting_the_interaction)) %>%
+  filter(ProtA %in% rownames(protSub) & ProtB %in% rownames(protSub)) %>%
+  mutate(pair=map2_chr(ProtA, ProtB, ~paste0(sort(c(.x,.y)), collapse = "-"))) %>%
+  mutate(database = case_when(
+    Reactome & Corum ~ "both",
+    Reactome & !Corum ~ "Reactome",
+    !Reactome & Corum ~ "Corum",
+    TRUE ~ "other"
+  )) %>% mutate(inComplex = "yes")
+```
+
+## Construct protein-protein interaction network by connecting chr12 proteins and non-chr12 protein
+
+```{r}
+comTab <- int_pairs %>% select(ProtA, ProtB, database) %>%
+  mutate(chrA = rowData(protCLL[ProtA,])$chromosome_name,
+         chrB = rowData(protCLL[ProtB,])$chromosome_name) %>%
+  filter(!is.na(chrA), !is.na(chrB)) %>%
+  filter((chrA == "12" & chrB != "12") | (chrA !="12" & chrB == "12")) %>%
+  mutate(source = ifelse(chrA == 12, ProtA, ProtB),
+         target = ifelse(chrA == 12, ProtB, ProtA)) %>%
+  select(source, target, database)
+```
+
+
+```{r}
+fdrCut <- 0.1
+resTab <- select(allRes, name, uniprotID, chrom, padj, padj.rna, logFC,log2FC.rna) %>%
+  mutate(sigProt = padj <= fdrCut,
+         sigRna = padj.rna <=fdrCut,
+         upProt = sigProt & logFC > 0,
+         upRna = sigRna & log2FC.rna > 0)
+comTab <- comTab %>% 
+  left_join(resTab, by = c(source = "uniprotID")) %>%
+  left_join(resTab, by = c(target = "uniprotID")) %>%
+  rename_all(funs(str_replace(., "x", "source"))) %>%
+  rename_all(funs(str_replace(., "y", "target"))) 
+```
+
+
+```{r}
+comTab.filter <- filter(comTab, sigProt.source, sigProt.target, !sigRna.target, upProt.source, upProt.target)
+```
+
+```{r, warning=FALSE}
+#get node list
+allNodes <- union(comTab.filter$name.source, comTab.filter$name.target) 
+
+nodeList <- data.frame(id = seq(length(allNodes))-1, name = allNodes, stringsAsFactors = FALSE) %>%
+  mutate(onChr12 = ifelse(rowData(protCLL[match(name, rowData(protCLL)$hgnc_symbol),])$chromosome_name %in% "12", 
+                          "chr12","otherChr"))
+
+#get edge list
+edgeList <- select(comTab.filter, name.source, name.target, database) %>%
+  dplyr::rename(Source = name.source, Target = name.target) %>% 
+  mutate(Source = nodeList[match(Source,nodeList$name),]$id,
+         Target = nodeList[match(Target, nodeList$name),]$id) %>%
+  data.frame(stringsAsFactors = FALSE)
+
+net <- graph_from_data_frame(vertices = nodeList, d=edgeList, directed = FALSE)
+```
+
+
+```{r, fig.height=15, fig.width=15}
+tidyNet <- as_tbl_graph(net)
+complexNet <- ggraph(tidyNet, layout = "igraph", algorithm = "nicely") + 
+  geom_edge_link(color = colList[3], width=1) + 
+  geom_node_point(aes(color =onChr12, shape = onChr12), size=6) + 
+  geom_node_text(aes(label = name), repel = TRUE, size=6) +
+  scale_color_manual(values = c(chr12 = colList[1],otherChr = colList[2])) +
+  scale_edge_color_brewer(palette = "Set2") +
+  theme_graph(base_family = "sans") + theme(legend.position = "none") 
+complexNet
+```
+
+### Heatmap of BCR complex proteins
+```{r BCR_complex_heatmap, fig.height=8, fig.width=12}
+seedProt <- c("CD79B","CD22","GRB2","PLCG1")
+seedID <- rownames(protCLL[match(seedProt,rowData(protCLL)$hgnc_symbol),])
+complexID <- filter(int_pairs, ProtA %in% seedID | ProtB %in% seedID)
+resList.BCR <- filter(resList, id %in% c(complexID$ProtA, complexID$ProtB), Gene == "trisomy12",
+                      adj.P.Val <= 0.1)
+protList <- resList.BCR$id
+plotMat <- assays(protCLL)[["QRILC"]][protList,]
+rownames(plotMat) <- rowData(protCLL[protList,])$hgnc_symbol
+
+colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
+  select(Patient.ID, trisomy12, IGHV.status) %>%
+  data.frame() %>% column_to_rownames("Patient.ID") %>%
+  arrange(trisomy12)
+colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
+
+plotMat <- jyluMisc::mscale(plotMat, censor = 5)
+plotMat <- plotMat[,rownames(colAnno)]
+
+
+rowAnno <- rowData(protCLL)[,c("chromosome_name","hgnc_symbol"),drop=FALSE] %>% 
+  data.frame(stringsAsFactors = FALSE) %>%
+  mutate(onChr12 = ifelse(chromosome_name == "12","yes","no")) %>%
+  select(hgnc_symbol, onChr12) %>% distinct(hgnc_symbol, .keep_all = TRUE) %>%
+  data.frame() %>% remove_rownames() %>%
+  column_to_rownames("hgnc_symbol")
+
+annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
+                IGHV.status = c(M = colList[4], U = colList[3]),
+                onChr12 = c(yes = colList[1],no = "white"))
+
+#pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none",
+#                   annotation_row = rowAnno, cluster_cols = FALSE,
+#                   clustering_method = "ward.D2",
+#                   color = colorRampPalette(c(colList[2],"white",colList[1]))(100),
+#                   breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
+#                   show_rownames = TRUE, show_colnames = FALSE,
+#                   treeheight_row = 0)
+
+haCol <- ComplexHeatmap::HeatmapAnnotation(df = colAnno, col=annoCol, which = "column",annotation_name_gp = gpar(fontface = "bold"))
+haRow <- ComplexHeatmap::HeatmapAnnotation(df = rowAnno[rownames(plotMat),,drop=FALSE], col=annoCol, which = "row", annotation_name_gp = gpar(fontface = "bold"))
+
+labelCol <- rep("black",nrow(plotMat))
+highlight <- c(seedProt, c("PTPN6","PTPN11","PTK2B"))
+labelCol[rownames(plotMat) %in% highlight] <-"red"
+
+
+ComplexHeatmap::Heatmap(plotMat, col = colorRampPalette(c(colList[2],"white",colList[1]))(100),name = "z-score",
+                        top_annotation = haCol, left_annotation = haRow, show_column_names = FALSE,
+                        cluster_columns  = FALSE, clustering_method_rows = "ward.D2",
+                        row_names_gp = gpar(col = labelCol), show_row_dend = FALSE,
+                        column_title_gp = gpar(cex= 1.5, fontface = "bold"))
+                          
+
+
+```
+
+# Validation on peptide level
+
+Load peptide quantification data
+```{r}
+load("../data/pepCLL_lumos_enc.RData")
+```
+
+```{r trisomy12_peptide, fig.width=15, fig.height=20}
+stratifier <- "trisomy12"
+plotList <- lapply(nameList, function(n) {
+ mutStatus <- as.character(patMeta[match(colnames(pepCLL), patMeta$Patient.ID),][[stratifier]])
+ names(mutStatus) <- colnames(pepCLL)
+ plotPep(pepCLL, n, type = "count", stratifier = stratifier, mutStatus = mutStatus)
+})
+cowplot::plot_grid(plotlist = plotList, ncol=1)
+```
+
+# Validation using timsTOF data
+
+Load timsTOF data
+```{r}
+load("../data/proteomic_timsTOF_enc.RData")
+load("../output/deResList_timsTOF.RData")
+```
+
+```{r}
+resList <- filter(resList, Gene == "trisomy12") %>%
+  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
+  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
+```
+
+```{r trisomy12_selected_protein_timsTOF, fig.height=12, fig.width=12}
+protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID")
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12) %>%
+  mutate(status = ifelse(trisomy12 %in% 1,"trisomy12","WT"),
+         name = hgnc_symbol) %>%
+    mutate(status = factor(status, levels = c("WT","trisomy12")))
+pList <- plotBox(plotTab, pValTabel = resList)
+cowplot::plot_grid(plotlist= pList, ncol=2)
+```
+
+# Assemble figures
+
+## Main text figure 2
+```{r Figure2, fig.width=20, fig.height=20}
+leftCol <- plot_grid(tri12Vocano, tri12Enrich,protBoxplot, ncol=1,
+                     rel_heights = c(0.35,0.25,0.4),
+                     labels = c("A","B","C"), label_size = 20,
+                     vjust = c(1.5,1.5,0))
+rightCol <- plot_grid(dosagePlot, 
+                      plot_grid(bufferPlot, bufferEnrich,ncol=2, 
+                                rel_widths = c(0.3,0.7), labels = c("E","F"), label_size = 20,
+                                vjust = c(0,0)),
+                      complexNet, ncol=1,
+                      rel_heights = c(0.2,0.2,0.6), labels = c("D","","G"), label_size = 20)
+
+plot_grid(leftCol, rightCol, rel_widths = c(0.4,0.6))
+```
+
