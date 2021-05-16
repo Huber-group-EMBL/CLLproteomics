@@ -1,7 +1,2 @@
-# Proteomics
+This is a [workflowr][] project that contains the source code for reproducing the results included in the manuscript "The Protein Landscape of Chronic Lymphocytic Leukemia" by Meier-Abt and Lu et al. 
 
-A [workflowr][] project.
-
-[workflowr]: https://github.com/jdblischak/workflowr
-
-Will be updated before submission.
