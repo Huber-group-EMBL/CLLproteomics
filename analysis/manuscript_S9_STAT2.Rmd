@@ -1,5 +1,5 @@
 ---
-title: "Explaining STAT2 protein expression using multipmics data"
+title: "Section 9: Explaining STAT2 protein expression using multi-omic data"
 author: "Junyan Lu"
 date: "2020-10-09"
 output: workflowr::wflow_html
@@ -21,6 +21,7 @@ library(ComplexHeatmap)
 library(jyluMisc)
 library(limma)
 library(gtable)
+library(ggbeeswarm)
 library(glmnet)
 library(SummarizedExperiment)
 library(tidyverse)
@@ -28,23 +29,24 @@ library(tidyverse)
 #load datasets
 load("../data/patMeta_enc.RData")
 load("../data/ddsrna_enc.RData")
-load("../data/proteomic_LUMOS_enc.RData") #using the LUMOS data
-load("../data/pheno1000_enc.RData")
+load("../data/proteomic_explore_enc.RData")
+load("../output/deResList.RData") #precalculated differential expression
+load("../data/screenData_enc.RData")
 
 # source 
 source("../code/utils.R")
 ```
 
 
-# Feature selection with LASSO
+# Feature selection with LASSO on multi-omic data to explain STAT2 protein expression
 
-##  Preprocessing data
+##  Preprocessing multi-omic data
 
 Proteomics data
 ```{r}
 expVar <- "STAT2"
 
-protMat <- assays(protCLL)[["QRILC"]]
+protMat <- assays(protCLL)[["QRILC_combat"]]
 rownames(protMat) <- rowData(protCLL)$hgnc_symbol
 
 yVec <- protMat[expVar,]
@@ -55,7 +57,7 @@ designMat <- model.matrix(~yVec)
 fit <- lmFit(protMat, design = designMat)
 fit2 <- eBayes(fit)
 resTab <- topTable(fit2, number = Inf)
-keepProt <- filter(resTab, adj.P.Val < 0.1)$ID
+keepProt <- filter(resTab, adj.P.Val < 0.05)$ID
 protMat <- t(protMat[keepProt, ])
 dim(protMat)
 
@@ -72,18 +74,17 @@ RNAseq
 ddsSub <- dds[,dds$PatID %in% colnames(protCLL)]
 
 #only keep protein coding genes with symbol
-ddsSub <- ddsSub[rowData(ddsSub)$biotype %in% "protein_coding" & !rowData(ddsSub)$symbol %in% c("",NA),]
+ddsSub <- ddsSub[rowData(ddsSub)$biotype %in% "protein_coding" & rowData(ddsSub)$symbol %in% rowData(protCLL)$hgnc_symbol,]
 
 #remove lowly expressed genes
 ddsSub <- ddsSub[rowSums(counts(ddsSub, normalized = TRUE)) > 100,]
 
 #voom transformation
-exprMat <- limma::voom(counts(ddsSub), lib.size = ddsSub$sizeFactor)$E
-ddsSub.voom <- ddsSub
-assay(ddsSub.voom) <- exprMat
+ddsSub.vst <- varianceStabilizingTransformation(ddsSub)
+exprMat <- assay(ddsSub.vst)
 
 rnaMat <- exprMat
-rownames(rnaMat) <- rowData(ddsSub.voom)$symbol
+rownames(rnaMat) <- rowData(ddsSub.vst)$symbol
 # Prefiltering
 overSampe <- intersect(names(yVec), colnames(rnaMat))
 designMat <- model.matrix(~ yVec[overSampe])
@@ -104,8 +105,6 @@ methMap <- c(LP= 0, IP=0.5, HP=1 )
 
 #genetics
 genData <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
-  select(-HIPO.ID, -project, -date.of.diagnosis, -treatment, -date.of.first.treatment,
-         -gender, -diagnosis, -Methylation_Cluster) %>%
   dplyr::rename(IGHV = IGHV.status) %>%
   mutate_at(vars(-Patient.ID), as.character) %>%
   mutate(IGHV = ighvMap[IGHV]) %>%
@@ -132,7 +131,7 @@ genData <- apply(genData, 2, function(x) {
 Drug responses
 ```{r, warning=FALSE, echo=TRUE}
 #choose the first sample
-viabMat <- arrange(pheno1000_main, screenDate) %>%
+viabMat <- arrange(screenData, screenDate) %>%
   filter(diagnosis == "CLL", patientID %in% colnames(protCLL)) %>%
   distinct(patientID, Drug, concIndex, .keep_all = TRUE) %>%
   filter(! Drug %in% c("DMSO","PBS")) %>%
@@ -143,7 +142,7 @@ viabMat <- arrange(pheno1000_main, screenDate) %>%
   as.matrix() %>% t()
 ```
 
-## Feature selection with LASSO penalty
+## Feature selection with LASSO (L1) penalty
 
 ```{r, echo=TRUE}
 #Functions for running glm
@@ -292,7 +291,7 @@ generateData <- function(responseList, inclSet,  onlyCombine = FALSE, censor = N
 
 Clean and integrate multi-omics data
 ```{r}
-inclSet<-list(Gene=genData, RNA = rnaMat, Protein = protMat, Drug = viabMat)
+inclSet<-list(Gene=genData, RNA = rnaMat, Protein = protMat)
 cleanData <- generateData(responseList, inclSet, censor = 5)
 ```
 
@@ -342,7 +341,7 @@ runGlm <- function(X, y, method = "ridge", repeats=20, folds = 3) {
 ```
 
 ```{r, cache=TRUE, warning=FALSE, message=FALSE}
-set.seed(2020)
+set.seed(2021)
 lassoResults <- list()
 for (eachMeasure in names(cleanData$allResponse)) {
   dataResult <- list()
@@ -533,7 +532,7 @@ lassoPlot <- function(lassoOut, cleanData, freqCut = 1, coefCut = 0.01, setNumbe
    
     gt <- egg::ggarrange(p2,p1,barLegend,dummyGrob, p3, dummyGrob, ncol=3, nrow=2, 
                          widths = c(0.6,2,0.3), padding = unit(0,"line"), clip = "off",
-                         heights = c(length(unique(matValue$Var))/2,1),draw = FALSE)
+                         heights = c(length(unique(matValue$Var))/2,2),draw = FALSE)
     plotList[[seaName]] <- gt
   }
   return(plotList)
@@ -556,7 +555,7 @@ geneLasso
 ### Combined
 
 ```{r}
-heatMaps <- lassoPlot(lassoResults, cleanData, freqCut = 1,setNumber = 5, legend = TRUE,  scaleFac = 1)
+heatMaps <- lassoPlot(lassoResults, cleanData, freqCut = 1,setNumber = 4, legend = TRUE,  scaleFac = 1)
 ```
 
 ```{r , fig.height=8, fig.width=10}
@@ -565,14 +564,54 @@ comLasso <- plot_grid(plotlist=heatMaps, ncol=1)
 comLasso
 ```
 
-#### STAT2 protein expression stratified by IGHV and trisomy12
+## LASSO model with only protein and RNA combined
+Clean and integrate multi-omics data
+```{r}
+inclSet<-list(RNA = rnaMat, Protein = protMat)
+cleanData <- generateData(responseList, inclSet, censor = 5)
+```
 
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+set.seed(2020)
+lassoResults <- list()
+for (eachMeasure in names(cleanData$allResponse)) {
+  dataResult <- list()
+  for (eachDataset in names(cleanData$allExplain[[eachMeasure]])) {
+    y <- cleanData$allResponse[[eachMeasure]]
+    X <- cleanData$allExplain[[eachMeasure]][[eachDataset]]
+  
+   
+    glmRes <- runGlm(X, y, method = "lasso", repeats = 50, folds = 3)
+    dataResult[[eachDataset]] <- glmRes 
+  }
+  lassoResults[[eachMeasure]] <- dataResult
+  
+}
+```
+
+
+
+```{r}
+heatMaps <- lassoPlot(lassoResults, cleanData, freqCut = 1,setNumber = 3, legend = TRUE,  scaleFac = 1)
+```
+
+```{r , fig.height=8, fig.width=10}
+heatMaps <- heatMaps[!is.na(heatMaps)]
+comLasso <- plot_grid(plotlist=heatMaps, ncol=1)
+comLasso
+```
+
+# IGHV mutational status and trisomy12 status jointly determine STAT2 protein expression
+
+
+### ANOVA test on IGHV/trisomy12 status to STAT2 protein expression
 ```{r, fig.height=5, fig.width=7}
 plotTab <- tibble(patID = colnames(protCLL),
-                  STAT2 = assays(protCLL)[["count"]][rowData(protCLL)$hgnc_symbol == "STAT2",],
+                  STAT2 = assays(protCLL)[["count_combat"]][rowData(protCLL)$hgnc_symbol == "STAT2",],
                   trisomy12 = protCLL$trisomy12,
                   IGHV=protCLL$IGHV.status) %>%
-  mutate(trisomy12 = ifelse(trisomy12 == 0, "WT","Tri12")) %>%
+  filter(!is.na(IGHV), !is.na(trisomy12)) %>%
+  mutate(trisomy12 = ifelse(trisomy12 == 0, "non-tri12","tri12")) %>%
   mutate(group = paste0(IGHV, "_", trisomy12))
 stat2BoxProt <- ggplot(plotTab, aes(group, y=STAT2, fill = group)) + geom_boxplot() + geom_point() + theme_full +
   scale_fill_manual(values = colList) + theme(legend.position = "none") +
@@ -582,15 +621,14 @@ summary(lm(STAT2 ~ IGHV * trisomy12, plotTab))
 ```
 **STAT2 protein expression is strongly affected by IGHV and trisomy12 status, U-CLLs with trisomy12 shows significant up-regulation of STAT2**
 
-#### STAT2 RNA expression stratified by IGHV and trisomy12
+### ANOVA test on IGHV/trisomy12 status to STAT2 RNA expression
 
-##### Samples in the proteomic cohort
 ```{r,fig.height=5, fig.width=7}
-plotTab <- tibble(patID = colnames(ddsSub.voom),
-                  STAT2 = assay(ddsSub.voom)[rowData(ddsSub.voom)$symbol == "STAT2",],
+plotTab <- tibble(patID = colnames(ddsSub.vst),
+                  STAT2 = assay(ddsSub.vst)[rowData(ddsSub.vst)$symbol == "STAT2",],
                   trisomy12 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy12,
                   IGHV=patMeta[match(patID, patMeta$Patient.ID),]$IGHV.status) %>%
-  mutate(trisomy12 = ifelse(trisomy12 == 0, "wt","tri12")) %>%
+  mutate(trisomy12 = ifelse(trisomy12 == 0, "non-tri12","tri12")) %>%
   mutate(group = paste0(IGHV, "_", trisomy12))
 
 stat2BoxRNA <- ggplot(plotTab, aes(group, y=STAT2, fill = group)) + geom_boxplot() + geom_point() + theme_full +
@@ -600,7 +638,7 @@ stat2BoxRNA <- ggplot(plotTab, aes(group, y=STAT2, fill = group)) + geom_boxplot
 summary(lm(STAT2 ~ IGHV * trisomy12, plotTab))
 ```
 
-
+### Visualize differences using boxplots
 ```{r, fig.width=10, fig.height=4}
 stat2Box <- plot_grid(stat2BoxProt, stat2BoxRNA)
 stat2Box
@@ -611,7 +649,7 @@ stat2Box
 
 ```{r}
 expVar <- "STAT2"
-protMat <- assays(protCLL)[["QRILC"]]
+protMat <- assays(protCLL)[["QRILC_combat"]]
 rownames(protMat) <- rowData(protCLL)$hgnc_symbol
 yVec <- protMat[expVar,]
 ```
@@ -653,17 +691,12 @@ d0 <- model.matrix(~yVec)
 d1 <- model.matrix(~ighv+tri12+yVec)
 ```
 
-## no blocking for IGHV or trisomy12
+## Without blocking for IGHV or trisomy12
 ```{r}
 fit <- lmFit(rnaMat, design = d0)
 fit2 <- eBayes(fit)
 resTab.noBlock <- topTable(fit2, number = Inf, coef = "yVec") %>% data.frame() %>% rownames_to_column("name")
-hist(resTab.noBlock$P.Value)
 resTab.noBlock.sig <- filter(resTab.noBlock, adj.P.Val < 0.1)
-```
-
-```{r}
-resTab.noBlock %>% mutate_if(is.numeric, formatC, digits=2, format="e") %>% DT::datatable()
 ```
 
 
@@ -717,7 +750,7 @@ plotCorScatter <- function(plotTab, x_lab = "X", y_lab = "Y", title = "",
 }
 ```
 
-### Correlation between selected genes and STAT2 protein expression
+### Correlation between selected RNAs and STAT2 protein expression
 ```{r, fig.width=12, fig.height=6}
 geneList <- c("OAS2", "IFI44")
 rnaSTAT2cor <- lapply(geneList, function(n) {
@@ -730,12 +763,12 @@ plotRNAcor <- plot_grid(plotlist = rnaSTAT2cor)
 plotRNAcor
 ```
 
-
+Visualize RNA expression using boxplots
 ```{r, fig.width=14, fig.height=5}
 geneList <- c("OAS2", "IFI44")
 rnaSTAT2corBox <- lapply(geneList, function(n) {
   plotTab <- tibble(expr = rnaMat[n,], IGHV = ighv, tri12 = tri12) %>%
-  mutate(trisomy12 = ifelse(tri12==1,"tri12","wt")) %>%
+  mutate(trisomy12 = ifelse(tri12==1,"tri12","non-tri12")) %>%
   mutate(group = paste0(IGHV, "_", trisomy12))
 
 ggplot(plotTab, aes(group, y=expr, fill = group)) + geom_boxplot() + geom_point() + theme_full +
@@ -747,16 +780,18 @@ plotRNAbox <- plot_grid(plotlist = rnaSTAT2corBox)
 plotRNAbox
 ```
 
+
+### Gene enrichment analysis for RNA expressions associated with STAT2 protein expression level
 ```{r rnaEnrichNoBlock, fig.width=10, fig.height=4}
 gmts <- list(H = "../data/gmts/h.all.v6.2.symbols.gmt",
              KEGG = "../data/gmts/c2.cp.kegg.v6.2.symbols.gmt")
 
 enRes <-  runCamera(rnaMat, d0, gmts$H,
-            removePrefix = "HALLMARK_", pCut = 0.1, ifFDR = TRUE)
+            removePrefix = "HALLMARK_", pCut = 0.1, ifFDR = TRUE, setMap=setMap)
 enRes$enrichPlot
 ```
 
-
+#### Heatmap showing the RNA expression of genes belong to the enriched pathways
 ```{r IFNA_heatmap_RNA, fig.width=10, fig.height=6}
 colAnno <- tibble(id = names(yVec),  STAT2= yVec, IGHV = ighv, trisomy12 = tri12) %>%
   mutate(trisomy12 = ifelse(trisomy12 ==1,"yes","no")) %>%
@@ -774,36 +809,36 @@ plotSetHeatmap(resTab.noBlock.sig, gmts$H, "HALLMARK_INTERFERON_ALPHA_RESPONSE",
 plotSetHeatmap(resTab.noBlock.sig, gmts$H, "HALLMARK_INTERFERON_GAMMA_RESPONSE", rnaMat, colAnno = colAnno, annoCol = annoCol,highLight = nameList)
 ```
 
-## blocking for IGHV and trisomy12
+## With blocking for IGHV and trisomy12
 
 ```{r}
 fit <- lmFit(rnaMat, design = d1)
 fit2 <- eBayes(fit)
 resTab.block <- topTable(fit2, number = Inf, coef = "yVec") %>% data.frame() %>% rownames_to_column("name")
-hist(resTab.block$P.Value)
 resTab.block.sig <- filter(resTab.block, P.Value < 0.01)
 ```
 
-
+Gene set enrichment analysis
 ```{r rnaEnrichBlock, fig.width=10, fig.height=6}
 
 enRes <-  runCamera(rnaMat, d1, gmts$H, contrast  = "yVec",
-            removePrefix = "HALLMARK_", pCut = 0.05, ifFDR = TRUE, plotTitle = "RNA enrichment")
+            removePrefix = "HALLMARK_", pCut = 0.05, ifFDR = TRUE, plotTitle = "RNA enrichment", setMap = setMap)
 rnaEnrich <- enRes$enrichPlot
 rnaEnrich
 ```
 
 # Pathway enrichment for protein expressions correlated with STAT2 protein level
 
+
+## Identify protein expression that are correlated with STAT2 protein expression
 ```{r}
 expVar <- "STAT2"
-protMat <- assays(protCLL)[["QRILC"]]
+protMat <- assays(protCLL)[["QRILC_combat"]]
 rownames(protMat) <- rowData(protCLL)$hgnc_symbol
 yVec <- protMat[expVar,]
 protMat <- protMat[rownames(protMat) != expVar,]
 ```
 
-Test
 ```{r}
 #buid design matirx
 ighv <- patMeta[match(names(yVec),patMeta$Patient.ID),]$IGHV.status
@@ -813,36 +848,34 @@ d0 <- model.matrix(~yVec)
 d1 <- model.matrix(~ighv+tri12+yVec)
 ```
 
-## no blocking
+### Without blocking for IGHV status and trisomy12
 ```{r}
 fit <- lmFit(protMat, design = d0)
 fit2 <- eBayes(fit)
 resTab.noBlock <- topTable(fit2, number = Inf, coef = "yVec") %>% data.frame() %>% mutate(name = ID)
-hist(resTab.noBlock$P.Value)
 resTab.noBlock.sig <- filter(resTab.noBlock, adj.P.Val < 0.1)
 ```
 
-```{r}
-resTab.noBlock %>% mutate_if(is.numeric, formatC, digits=2, format="e") %>% DT::datatable()
-```
-
 ### Correlation between selected proteins and STAT2 protein expression
-```{r corSTAT2prot, fig.width=18, fig.height=6}
+```{r corSTAT2prot, fig.width=6, fig.height=6}
 geneList <- c("OAS1", "OAS2", "IFI30" )
+geneList <- c("OAS2")
+
 protSTAT2cor <- lapply(geneList, function(n) {
   plotTab <- tibble(x = yVec, y = protMat[n,], IGHV = ighv, tri12 = tri12) %>%
     mutate(trisomy12 = ifelse(tri12==1,"yes","no"))
   plotCorScatter(plotTab, annoPos = "left", x_lab = "STAT2 protein expression", y_lab = sprintf("%s protein expression", n)) 
 })
 names(protSTAT2cor) <- geneList
-plot_grid(plotlist = protSTAT2cor, ncol=3)
+plot_grid(plotlist = protSTAT2cor, ncol=1)
 ```
 
-
+Boxplots
 ```{r, fig.width=21, fig.height=5}
 protSTAT2corBox <- lapply(geneList, function(n) {
   plotTab <- tibble(expr = protMat[n,], IGHV = ighv, tri12 = tri12) %>%
-  mutate(trisomy12 = ifelse(tri12==1,"tri12","wt")) %>%
+  mutate(trisomy12 = ifelse(tri12==1,"tri12","non-tri12")) %>%
+  filter(!is.na(IGHV), !is.na(trisomy12)) %>%
   mutate(group = paste0(IGHV, "_", trisomy12))
 
   ggplot(plotTab, aes(group, y=expr, fill = group)) + geom_boxplot() + geom_point() + theme_full +
@@ -853,11 +886,11 @@ names(protSTAT2corBox) <- geneList
 plot_grid(plotlist = protSTAT2corBox, ncol=3)
 ```
 
-
+### Gene set enrichment analysis
 ```{r proteinEnrichNoBlock, fig.width=10, fig.height=6}
 
 enRes <-  runCamera(protMat, d0, gmts$H,
-            removePrefix = "HALLMARK_", pCut = 0.1, ifFDR = TRUE)
+            removePrefix = "HALLMARK_", pCut = 0.1, ifFDR = TRUE, setMap = setMap)
 enRes$enrichPlot
 ```
 
@@ -870,7 +903,7 @@ plotSetHeatmap(resTab.noBlock.sig, gmts$H, "HALLMARK_INTERFERON_ALPHA_RESPONSE",
 plotSetHeatmap(resTab.noBlock.sig, gmts$H, "HALLMARK_INTERFERON_GAMMA_RESPONSE", protMat, colAnno = colAnno, annoCol = annoCol, highLight = nameList)
 ```
 
-## blocking for IGHV and trisomy12
+## With blocking for IGHV and trisomy12
 
 ```{r}
 fit <- lmFit(protMat, design = d1)
@@ -884,20 +917,208 @@ resTab.block.sig <- filter(resTab.block, P.Value < 0.01)
 ```{r, fig.width=10, fig.height=5}
 
 enRes <-  runCamera(protMat, d1, gmts$H, contrast  = "yVec",
-            removePrefix = "HALLMARK_", pCut = 0.05, ifFDR = TRUE, plotTitle = "Protein enrichment")
+            removePrefix = "HALLMARK_", pCut = 0.05, ifFDR = TRUE, plotTitle = "Protein enrichment", setMap = setMap)
 protEnrich <- enRes$enrichPlot
 protEnrich
 ```
 
-# Assemble figure
+# Western blot validation of STAT2 expression
 
-## Main text figure 
-```{r Figure8, fig.width=17, fig.height=12}
-
-leftCol <- plot_grid(NULL, geneLasso, NULL,  comLasso, NULL, rnaEnrich, protEnrich, ncol=1, 
-                     rel_heights  = c(0.05,0.15,0.05,0.5,0.05,0.3,0.2), labels = c("A","","","B","","D",""), label_size = 22)
-rightCol <- plot_grid(stat2Box, plotRNAcor, plotRNAbox, ncol=1, rel_heights = c(0.8,1,0.8),labels = c("C","E","F"), label_size = 22)
-plot_grid(leftCol, rightCol, ncol=2)
+Read in western results
+```{r}
+wesTab <- readxl::read_xlsx("../data/Western_blot_results_separate_blots.xlsx") %>%
+  separate(`IGHV_Tri12`, c("IGHV","trisomy12"),"_") %>%
+  mutate(trisomy12 = ifelse(trisomy12 == "WT","non-tri12","tri12")) %>%
+  dplyr::rename(intensity = `STAT2 Total`) %>%
+  mutate(logIntensity = log10(intensity))
 ```
+
+## Associations with IGHV and trisomy12
+
+### IGHV
+```{r}
+tRes <- car::Anova(lm(intensity~IGHV + Blot, wesTab))
+pval <- tRes$`Pr(>F)`[1]
+```
+
+Boxplot
+```{r, fig.width=5, fig.height=4}
+plotTab <- filter(wesTab) %>%
+  mutate(status = ifelse(IGHV=="M","M-CLL","U-CLL")) %>%
+  group_by(status) %>% mutate(n=n()) %>% ungroup() %>%
+  mutate(group = sprintf("%s\n(N=%s)",status,n)) %>%
+  arrange(status) %>% mutate(group = factor(group, levels = unique(group)))
+
+pval <- formatNum(pval, digits = 2)
+titleText <- bquote("STAT2 protein expression by Western Blot analysis"~" ( ANOVA "~italic("P")~"="~.(pval)~")")
+pValText <-  bquote(italic("P")~"-value ="~.(pval))
+ggplot(plotTab, aes(x=group, y = intensity)) +
+  geom_boxplot(width=0.3, aes(fill = status), outlier.shape = NA) +
+  annotate(geom = "text" ,label = pValText, x= 1.5, y=Inf, vjust=2, col = colList[1]) +
+  geom_beeswarm(aes(shape = Blot), size =2.5,cex = 2, alpha=0.5) +
+  ggtitle("STAT2 protein expression by Western Blot analysis")+
+  #ggtitle(sprintf("%s (p = %s)",geneName, formatNum(pval, digits = 1, format = "e"))) +
+  ylab("Normalized intensity") + xlab("") +
+  scale_fill_manual(values = colList[3:5], name = "") +
+  theme_full +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size=13),
+        plot.margin = margin(10,10,10,10))
+```
+
+### trisomy12
+```{r}
+tRes <- car::Anova(lm(intensity~trisomy12 + Blot, wesTab))
+pval <- tRes$`Pr(>F)`[1]
+```
+
+Boxplot
+```{r STAT2_trisomy12_western, fig.width=5, fig.height=4}
+plotTab <- filter(wesTab) %>%
+  mutate(status = trisomy12) %>%
+  group_by(status) %>% mutate(n=n()) %>% ungroup() %>%
+  mutate(group = sprintf("%s\n(N=%s)",status,n)) %>%
+  arrange(status) %>% mutate(group = factor(group, levels = unique(group)))
+
+pval <- formatNum(pval, digits = 2)
+titleText <- bquote("STAT2 protein expression by Western Blot analysis"~" ( ANOVA "~italic("P")~"="~.(pval)~")")
+pValText <-  bquote(italic("P")~"-value ="~.(pval))
+ggplot(plotTab, aes(x=group, y = intensity)) +
+  geom_boxplot(width=0.3, aes(fill = status), outlier.shape = NA) +
+  annotate(geom = "text" ,label = pValText, x= 1.5, y=Inf,vjust=2, col = colList[1]) +
+  geom_beeswarm(aes(shape = Blot), size =2.5,cex = 2, alpha=0.5) +
+  ggtitle("STAT2 protein expression by Western Blot analysis")+
+  #ggtitle(sprintf("%s (p = %s)",geneName, formatNum(pval, digits = 1, format = "e"))) +
+  ylab("Normalized intensity") + xlab("") +
+  scale_fill_manual(values = colList[3:5], name = "") +
+  theme_full +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size=13),
+        plot.margin = margin(10,10,10,10))
+```
+
+
+Joint IGHV and trisomy12
+```{r STAT2_western_tri12_IGHV, fig.width=6.5, fig.height=4}
+plotTab <- wesTab %>%
+  mutate(group = paste0(IGHV, "_", trisomy12))
+
+stat2BoxWest <- ggplot(plotTab, aes(group, y=intensity, fill = group)) + geom_boxplot() + 
+  geom_beeswarm(aes(shape = Blot), size =2.5,cex = 2, alpha=0.5) +
+  theme_full +
+  scale_fill_manual(values = colList, name = "") + theme(legend.position = "bottom") +
+  xlab("") + ggtitle("STAT2 protein expression by Western Blot analysis") +ylab("Normalized intensity")
+
+stat2BoxWest
+```
+
+
+# Analysis of the PCR results of CLL cell lines with and without STAT2 knockouts
+
+Load datasets
+```{r}
+tab1 <- readxl::read_xlsx("../data/CAS9results.xlsx", sheet = 1) %>% mutate(control = "ACTB") 
+tab2 <- readxl::read_xlsx("../data/CAS9results.xlsx", sheet = 2) %>% mutate(control = "GAPDH")
+pcrTab <- bind_rows(tab1, tab2) %>% separate(name, into = c("cellLine","sgRNA","treatment","IFN"), sep = "[_ ]", remove = FALSE) %>%
+  pivot_longer(contains("fold change"), names_to = "replicate",values_to = "foldChange") %>%
+  mutate(replicate=str_replace(replicate, "fold change replicate ","R"),
+         IFN = ifelse(treatment == "+", "IFN", "no IFN"),
+         trisomy12 = ifelse(cellLine %in% c("MEC-1","HG-3"), "no" ,"yes"),
+         sgTreat= paste0(sgRNA," ",treatment," IFN")) %>%
+  select(-treatment) %>%
+  mutate(sgRNA = factor(sgRNA, levels = c("NTC","34A","36D")),
+         Gene = factor(Gene, levels = c("STAT2","OAS1","OAS2"))) %>%
+  arrange(sgRNA, Gene) %>%
+  mutate(sgTreat = factor(sgTreat, levels = unique(sgTreat))) %>%
+  mutate(log2foldChange = log2(foldChange))
+geneSymbol <- c(bquote(italic("STAT2")),bquote(italic("OAS1")), bquote(italic("OAS2")))
+```
+
+GAPDH as control
+```{r, fig.height=10, fig.width=10}
+plotTab <- pcrTab %>% filter(control == "GAPDH")
+
+barGAPDH <- ggplot(plotTab, aes(x=sgTreat, y=log2foldChange)) +
+  geom_bar(aes(fill = Gene), position = "dodge", stat = "summary", fun.y = "mean") +
+  geom_point(aes(dodge=Gene), col = "black", position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = colList, labels = geneSymbol) +
+  facet_wrap(~cellLine, scale = "free_x", ncol=2 ) +
+  xlab("") + ylab(bquote("log"[2]*"(fold change) relative to control in RNA expression")) +
+  #scale_y_continuous() +
+  geom_hline(yintercept = 0, linetype = "dashed", col = "grey50") +
+  theme_half +
+  theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5),
+        strip.text = element_text(size=12, face= "bold"),
+        legend.position = "right")
+barGAPDH
+```
+
+ACTB as control
+```{r, fig.height=10, fig.width=10}
+
+plotTab <- pcrTab %>% filter(control == "ACTB")
+
+barACTB <- ggplot(plotTab, aes(x=sgTreat, y=log2foldChange)) +
+  geom_bar(aes(fill = Gene), position = "dodge", stat = "summary", fun.y = "mean") +
+  geom_point(aes(dodge=Gene), col = "black", position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = colList, labels = geneSymbol) +
+  facet_wrap(~cellLine, scale = "free_x", ncol=2) +
+  xlab("") + ylab(bquote("log"[2]*"(fold change) relative to control in RNA expression")) +
+  #scale_y_continuous() +
+  geom_hline(yintercept = 0, linetype = "dashed", col = "grey50") +
+  theme_half +
+  theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5),
+        strip.text = element_text(size=12, face= "bold"),
+        legend.position = "right")
+barACTB
+```
+
+## Compare trisomy12 cell lines with non-trisomy12 cell lines
+
+```{r}
+pcrTab <- readxl::read_excel("../data/STATexprPCR.xlsx") %>%
+  separate(name, into = c("cellLine", "sgRNA","IFN","other"),sep = " ") %>%
+  #mutate(IFN = ifelse(IFN == "+","with ","no ")) %>%
+  mutate(IFN = paste0(IFN, " ",other),
+         trisomy12 = str_replace(trisomy12, "Non","non")) %>% 
+  arrange( trisomy12, IFN) %>%
+  mutate(group = paste0(trisomy12," ", IFN)) %>%
+  mutate(group =factor(group, levels=unique(group)),
+         sgRNA = factor(sgRNA, levels = c("NTC","34A","36D")),
+         Gene = factor(Gene, levels = c("STAT2","OAS1","OAS2"))) %>%
+  group_by(cellLine, sgRNA, group, Gene) %>%
+  summarise(fc = mean(foldChange)) %>%
+  ungroup()
+```
+
+
+
+```{r, fig.height=5, fig.width=11}
+
+geneSymbol <- c(bquote(italic("STAT2")),bquote(italic("OAS1")), bquote(italic("OAS2")))
+
+
+meanTab <- group_by(pcrTab, group, sgRNA, Gene) %>%
+  summarise(meanVal = mean(fc))
+  
+ggplot(pcrTab, aes(x=group, y = fc, col = Gene, group = Gene)) +
+  geom_point(aes(shape = cellLine),position = position_dodge(width = 0.8), size=3) +
+  xlab("") + ylab("fold change") +
+  #ggrepel::geom_text_repel(aes(label = cellLine)) +
+  scale_color_manual(values = colList, labels = geneSymbol, name = "gene") +
+  scale_shape_discrete(name = "cell line") +
+  geom_point(data=meanTab, aes(x=group, y=meanVal), position = position_dodge(width = 0.8), color= "grey50", shape = "—", size=6) +
+  #scale_y_continuous(limits = c(-3,6)) +
+  #ggtitle(sprintf("%s expression (%s)", geneName, condi)) +
+  facet_wrap(~sgRNA, ncol=3, scale = "free_x") +
+  theme_full + theme(legend.position = "right",
+                     plot.title = element_text(face = "bold"),
+                     strip.text = element_text(size=12), 
+                     axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+```
+
+
+
+
 
 

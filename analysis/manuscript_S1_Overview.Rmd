@@ -13,15 +13,291 @@ library(limma)
 library(DESeq2)
 library(cowplot)
 library(proDA)
+library(pheatmap)
 library(SummarizedExperiment)
 library(tidyverse)
 
 #load datasets
 load("../data/patMeta_enc.RData")
 load("../data/ddsrna_enc.RData")
-load("../data/proteomic_LUMOS_enc.RData")
+load("../data/proteomic_explore_enc.RData")
 source("../code/utils.R")
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, dev = c("png","pdf"))
+```
+
+# Overview of the patient characteristics in our study cohort
+
+## A table shown the clinical characteristics
+(all cohorts combined)
+```{r}
+labelBatch <- c(batch1 = "batch1", batch2 = "batch3", batch3 = "batch2")
+patInfo <- sampleTab %>% 
+  filter(!lowQuality, !duplicatedPat) %>%
+  select(encID, leukCount, cohort,batch) %>%
+  mutate(batch = labelBatch[batch]) %>%
+  arrange(batch, encID) %>%
+  left_join(select(patMeta, Patient.ID, IGHV.status, trisomy12), by = c(encID = "Patient.ID")) %>%
+  left_join(select(survT, patID, OS, died, TTT, treatedAfter, TTT, age, sex, pretreat), by = c(encID = "patID")) %>%
+  mutate(`No.` = seq(nrow(.))) %>%
+  select(No., encID, age, sex, IGHV.status, trisomy12, leukCount, OS, died, TTT, treatedAfter, pretreat, cohort, batch)
+
+patInfoTab <- patInfo %>% #format
+  mutate(trisomy12 = ifelse(trisomy12 %in% "1", "yes", "no"),
+         died = ifelse(is.na(OS),NA, ifelse(died,"yes","no")),
+         treatedAfter = ifelse(is.na(TTT), NA, ifelse(treatedAfter, "yes","no")),
+         pretreat = ifelse(pretreat %in% 1, "yes","no"),
+         age = as.integer(age),
+         OS = formatC(OS, digits=1),
+         TTT = formatC(TTT, digits=1)) %>%
+  mutate_all(replace_na,"NA") %>%
+  #arrange(cohort, encID) %>%
+  dplyr::rename(ID = encID,
+                IGHV = IGHV.status,
+                `WBC count` = leukCount,
+                `Survival time (years)` = OS,
+                Died = died,
+                `Time to treatment (years)` = TTT,
+                `Treatment after sampling` = treatedAfter,
+                `Treatment before sampling` = pretreat)
+
+patInfoTab %>% DT::datatable()
+```
+
+
+## Prepare summary matrix for genomics
+
+### Get mutations with at least 5 cases
+```{r}
+geneMat <-  patMeta[match(patInfo$encID, patMeta$Patient.ID),] %>%
+  select(-Methylation_Cluster) %>%
+  mutate(IGHV.status = ifelse(!is.na(IGHV.status), ifelse(IGHV.status == "M",1,0),NA)) %>%
+  mutate(cohort = sampleTab[match(Patient.ID, sampleTab$encID),]$cohort) %>%
+  mutate(cohort = ifelse(cohort == "exploration",1,0)) %>%
+  mutate_if(is.factor, as.character) %>%
+  mutate_at(vars(-Patient.ID), as.numeric) %>% #assign a few unknown mutated cases to wildtype
+  data.frame() %>% column_to_rownames("Patient.ID")
+
+
+geneMat <- geneMat[,apply(geneMat,2, function(x) sum(x %in% 1, na.rm = TRUE))>=5]
+```
+
+```{r}
+#Remove some dubious annotations
+geneMat <- geneMat[,!colnames(geneMat) %in% c("del5IgH","gain2p","IgH_break")]
+useGeneForComposition <- colnames(geneMat)
+
+useGeneForComposition <- unique(c(useGeneForComposition,"U1","cohort","IGHV.status"))
+geneMat <- geneMat[,useGeneForComposition]
+```
+
+### Plot to summarise genomic background
+
+Separate CNV table and mutation table
+```{r}
+cnvCol <- colnames(geneMat)[grepl("del|trisomy|IGHV|cohort",colnames(geneMat))]
+cnvMat <- geneMat[,cnvCol]
+mutMat <- geneMat[,!colnames(geneMat) %in% cnvCol]
+cnvMat <- cnvMat[,names(sort(colSums(cnvMat == 1,na.rm=TRUE)))]
+
+#Manually assign CNV feature order for better visualization
+cnvMat <- cnvMat[,c("del17p","del11q","del13q","trisomy19","trisomy12","IGHV.status","cohort")]
+
+
+mutMat <- mutMat[,names(sort(colSums(mutMat == 1, na.rm=TRUE)))]
+geneMat <- cbind(mutMat,cnvMat)
+geneMat[is.na(geneMat)] <- -1
+```
+
+```{r}
+sortTab <- function(sumTab) {
+  i <- ncol(sumTab)
+  #print(i)
+  if (i == 1) {
+    return(rownames(sumTab)[order(sumTab[,i])])
+  }
+  allLevel <- sort(unique(sumTab[,i]))
+  orderRow <- lapply(allLevel, function(n) {
+    sortTab(sumTab[sumTab[,i] %in% n, seq(1,i-1), drop = FALSE])  
+  }) %>% unlist() %>% c()
+  return(orderRow)
+}
+
+sortedPat <- rev(sortTab(geneMat))
+geneMat <- geneMat[,!colnames(geneMat) %in% c("IGHV.status","cohort")]
+```
+
+```{r}
+
+plotTab <- geneMat %>% as_tibble(rownames="patID") %>% mutate_all(as.character) %>%
+  pivot_longer(-patID, names_to = "var", values_to = "value") %>%
+  mutate(status = case_when(
+    value == -1 ~ "NA",
+    value == 0 ~ "WT",
+    value == 1 & var %in% cnvCol ~ "CNA",
+    value == 1 & !var %in% cnvCol ~ "gene mutation"
+  )) %>% 
+  mutate(var = factor(var, levels = c(colnames(mutMat),colnames(cnvMat))), 
+         patID = factor(patID, levels = sortedPat),
+         status = factor(status, levels =c("WT","CNA","gene mutation","NA")))
+
+# get number of mutations
+sumMutTab <- group_by(plotTab, var) %>%
+  summarise(num=sum(value %in% 1))
+
+formatedName <- lapply(levels(plotTab$var), function(n) {
+  num <- filter(sumMutTab, var == n)$num
+  if(n %in% cnvCol) {
+    nameCNV <- c(del17p = "del(17)(p13)", del11q = "del(11)(q22.3)", del13q = "del(13)(q14)")
+    if (n %in% names(nameCNV)) {
+      n <- nameCNV[n]
+    }
+    sprintf("%s [%s]",n, num)
+  } else {
+    bquote(italic(.(n))~"["*.(num)*"]")
+  }
+})
+```
+
+```{r , fig.height=6, fig.width=12}
+pMain <- ggplot(plotTab, aes(x=patID, y = var, fill = status)) + 
+  geom_tile(color = "grey80") +
+  theme_void() + 
+  scale_fill_manual(values = c("gene mutation" = colList[5],
+                               "CNA"= colList[4],
+                               "WT" ="white", 
+                               "NA" = "grey80"),
+                    name = "aberrations") +
+  scale_y_discrete(labels = formatedName) +
+  theme(axis.text.x =  element_blank(),
+        axis.text.y = element_text(size=11, face = "bold", hjust = 1),
+        axis.ticks.length.y = unit(0.05,"npc")) +
+  ylab("") + xlab("")
+```
+
+## Column annotations for other characteristics
+
+### Cohort 
+```{r}
+cohortTab <- select(patInfo, encID, cohort) %>%
+  mutate(patID = encID, status = cohort, type = "cohort") %>%
+  mutate(status = ifelse(status == "exploration","main","additional")) %>%
+  mutate(status = factor(status, levels = c("main","additional"))) %>%
+  filter(patID %in% sortedPat) %>%
+  mutate(patID = factor(patID, levels = sortedPat)) %>%
+  select(patID, type, status)
+
+pCohort <- ggplot(cohortTab, aes(x=patID, y = type, fill = status)) + 
+  geom_tile(color = NA) +
+  theme_void() + xlab("") + ylab("") +
+  coord_cartesian(expand = FALSE) +
+  scale_fill_manual(values = c(main=colList[3],additional = colList[2]), name = "cohort") +
+  theme(axis.text.y = element_text(face = "bold", size=11),
+        axis.ticks.length.y = unit(0.05,"npc"))
+
+```
+
+
+### IGHV status
+```{r}
+ighvTab <- select(patMeta, Patient.ID, IGHV.status) %>%
+  mutate(patID = Patient.ID, status = IGHV.status, type = "IGHV") %>%
+  filter(patID %in% sortedPat) %>%
+  mutate(patID = factor(patID, levels = sortedPat)) %>%
+  select(patID, type, status) %>%
+  mutate(status = ifelse(is.na(status),"NA",status)) %>%
+  mutate(status = factor(status, levels = c("M","U","NA")))
+
+pIGHV <- ggplot(ighvTab, aes(x=patID, y = type, fill = status)) + 
+  geom_tile(color = NA) +
+  theme_void() + xlab("") + ylab("") +
+  coord_cartesian(expand = FALSE) +
+  scale_fill_manual(values = c(M="black",U="white","NA" = "grey80"), name = "IGHV") +
+  theme(axis.text.y = element_text(face = "bold", size=11),
+        axis.ticks.length.y = unit(0.05,"npc"))
+
+#pIGHV
+```
+
+### Sex
+```{r}
+sexTab <- select(survT, patID, sex) %>%
+  mutate(status = as.character(sex), type = "sex") %>%
+  filter(patID %in% sortedPat) %>%
+  mutate(patID = factor(patID, levels = sortedPat),
+         status = case_when(status %in% "m" ~ "male",
+                            status %in% "f" ~ "female")) %>%
+  select(patID, type, status)
+
+pSex <- ggplot(sexTab, aes(x=patID, y = type, fill = status)) + 
+  geom_tile(color = NA) +
+  theme_void() + xlab("") +  ylab("") +
+  coord_cartesian(expand = FALSE) +
+  scale_fill_manual(values = c(male=colList[7],female=colList[5]), name = "sex") +
+  theme(axis.text.y = element_text(face = "bold",size=11),
+        axis.ticks.length.y = unit(0.05,"npc"))
+#pSex
+```
+
+### Age
+```{r}
+agePlotTab <- survT %>% filter(patID %in% sortedPat) %>%
+  select(patID, age) %>%
+  mutate( status = age, type = "age") %>%
+  mutate(patID = factor(patID, levels = sortedPat)) %>%
+  select(patID, type, status)
+
+
+pAge <- ggplot(agePlotTab, aes(x=patID, y = type, fill = status)) + 
+  geom_tile(color = NA) +
+  theme_void() + xlab("") +  ylab("") +
+  coord_cartesian(expand = FALSE) +
+  scale_fill_viridis_b(name = "age") +
+  theme(axis.text.y = element_text(face = "bold",size=11),
+        axis.ticks.length.y = unit(0.05,"npc"))
+#pAge
+```
+
+## Generate combined summarisation plots
+
+Main plot
+```{r cohortSummary_all, fig.height=4, fig.width=6}
+lMain <- get_legend(pMain + geom_tile(color = "black") )
+lAge <- get_legend(pAge + geom_tile(color = "black") )
+lSex <- get_legend(pSex+ geom_tile(color = "black") )
+lIGHV <- get_legend(pIGHV+ geom_tile(color = "black") )
+lCohort <- get_legend(pCohort + geom_tile(color = "black"))
+
+noLegend <- theme(legend.position = "none")
+mainPlot <- plot_grid(pAge + noLegend, pSex + noLegend, 
+                      pCohort + noLegend,
+                      pIGHV + noLegend,
+                     pMain + noLegend, ncol=1, align = "v",
+                     rel_heights = c(rep(1,4),18))
+
+
+legendPlot <- plot_grid(lAge, lSex, lIGHV, lMain,ncol=1, align = "hv")
+
+plot_grid(mainPlot)
+```
+
+Figure legend
+```{r cohortSummary_legend_all, fig.height=4, fig.width=5}
+
+
+legendPlot <- plot_grid(lAge, lSex, lCohort, lIGHV, lMain,nrow=1, align = "hv")
+
+plot_grid(legendPlot, ncol=1, align = "hv")
+```
+
+
+
+
+
+# Number of detected proteins
+
+## Proteins identified in at least in 50% of the samples
+```{r}
+dim(protCLL)
 ```
 
 
@@ -29,10 +305,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, dev = c("pn
 
 ## Preprocess transcriptomic and proteomic data
 
+Preprocessing RNA sequencing data
 ```{r, cache=TRUE, autodep=TRUE}
-protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
-
-colnames(dds) <- dds$PatID
 dds <- estimateSizeFactors(dds)
 sampleOverlap <- intersect(colnames(protCLL), colnames(dds))
 geneOverlap <- intersect(rowData(protCLL)$ensembl_gene_id, rownames(dds))
@@ -46,7 +320,6 @@ noExp <- rowSums(counts(ddsSub)) == 0
 ddsSub <- ddsSub[!noExp,]
 protSub <- protSub[!noExp,]
 
-#remove proteins with duplicated identifiers
 protSub <- protSub[!duplicated(rowData(protSub)$name)]
 
 geneOverlap <- intersect(rowData(protSub)$ensembl_gene_id, rownames(ddsSub))
@@ -55,9 +328,10 @@ ddsSub.vst <- varianceStabilizingTransformation(ddsSub)
 ```
 
 ## Calculate correlations between protein abundance and RNA expression
+
 ```{r, warning=FALSE, cache=TRUE, autodep=TRUE}
 rnaMat <- assay(ddsSub.vst)
-proMat <- assays(protSub)[["count"]]
+proMat <- assays(protSub)[["count_combat"]]
 rownames(proMat) <- rowData(protSub)$ensembl_gene_id
 
 corTab <- lapply(geneOverlap, function(n) {
@@ -74,11 +348,12 @@ corTab <- lapply(geneOverlap, function(n) {
 ```
 
 ## Plot the distribution 
-```{r overall_protein_rna_correlation, fig.width=5, fig.height=3}
+```{r overall_protein_rna_correlation, fig.width=6.2, fig.height=4}
 corHistPlot <- ggplot(corTab, aes(x=coef)) + geom_histogram(position = "identity", col = colList[2], alpha =0.3, bins =50) +
   geom_vline(xintercept = 0, col = colList[1], linetype = "dashed") + xlim(-0.7,1) +
       xlab("Pearson's correlation coefficient") + theme_half +
-  ggtitle("Correlation between mRNA and protein expression")
+  ggtitle("Correlation between mRNA and protein expression") +
+  theme(axis.text = element_text(size=18), axis.title = element_text(size=18))
 corHistPlot
 ```
 
@@ -113,11 +388,11 @@ cowplot::plot_grid(plotlist = plotList, ncol =2)
 ```
 
 
-## Plot protein RNA correlation for selected genes
+## Plot protein-RNA correlation for selected genes
 
 ### Good correlations
-```{r RNA_protein_cor_markers, fig.height=8, fig.width=8}
-geneList <- c("ZAP70","CD22","CD38","CD79A")
+```{r RNA_protein_cor_markers, fig.height=4, fig.width=12}
+geneList <- c("ZAP70","CD22","CD79A")
 plotList <- lapply(geneList, function(n) {
   geneId <- rownames(dds)[match(n, rowData(dds)$symbol)]
   stopifnot(length(geneId) ==1)
@@ -127,7 +402,7 @@ plotList <- lapply(geneList, function(n) {
   plotCorScatter(plotTab, "x","y", showR2 = FALSE, annoPos = annoPos, x_lab = "RNA expression", shape = "IGHV",
                  y_lab ="Protein expression", title = n,dotCol = colList[4], textCol = colList[1], legendPos="none")
 })
-goodCorPlot <- cowplot::plot_grid(plotlist = plotList, ncol =2)
+goodCorPlot <- cowplot::plot_grid(plotlist = plotList, ncol =3)
 goodCorPlot
 ```
 
@@ -152,10 +427,12 @@ badCorPlot
 
 ## Calculate PCA
 
+We will perform principal component analysis to identify and annotate the major dimensions in our dataset.
+
 ```{r,fig.width=6, fig.height=5}
 #remove genes on sex chromosomes
 protCLL.sub <- protCLL[!rowData(protCLL)$chromosome_name %in% c("X","Y"),]
-plotMat <- assays(protCLL.sub)[["QRILC"]]
+plotMat <- assays(protCLL.sub)[["QRILC_combat"]]
 sds <- genefilter::rowSds(plotMat)
 plotMat <- as.matrix(plotMat[order(sds,decreasing = TRUE),])
 colAnno <- colData(protCLL)[,c("gender","IGHV.status","trisomy12")] %>%
@@ -169,35 +446,7 @@ varExp <- structure(eigs/sum(eigs),names = colnames(pcRes))
 ```
 All proteins are included for PCA analysis
 
-## Plot PC1 and PC2
-```{r plot_PC1_PC2,fig.height=5, fig.width=6}
-plotTab <- pcRes %>% data.frame() %>% cbind(colAnno[rownames(.),]) %>%
-  rownames_to_column("patID") %>% as_tibble()
-
-plotPCA12 <- ggplot(plotTab, aes(x=PC1, y=PC2, col = trisomy12, shape = IGHV.status)) + geom_point(size=4) +
-  xlab(sprintf("PC1 (%1.2f%%)",varExp[["PC1"]]*100)) +
-  ylab(sprintf("PC2 (%1.2f%%)",varExp[["PC2"]]*100)) +
-  scale_color_manual(values = colList) +
-  scale_shape_manual(values = c(M = 16, U =1)) +
-  xlim(-60,60) + ylim(-60,60) +
-  theme_full + theme(legend.position = "none")
-
-plotPCA12
-```
-
-## Plot PC3 and PC4
-```{r plot_PC2_PC4,fig.height=5, fig.width=6}
-plotPCA34 <- ggplot(plotTab, aes(x=PC3, y=PC4, col = trisomy12, shape = IGHV.status)) + geom_point(size=4) +
-  xlab(sprintf("PC3 (%1.2f%%)",varExp[["PC3"]]*100)) +
-  ylab(sprintf("PC4 (%1.2f%%)",varExp[["PC4"]]*100)) +
-  scale_color_manual(values = colList) +
-  scale_shape_manual(values = c(M = 16, U =1)) +
-  xlim(-60,60) + ylim(-60,60) +
-  theme_full
-plotPCA34
-```
-
-## Correlation test between PCs and IGHV.status
+## Correlation test between PCs and IGHV.status/trisomy12
 ```{r}
 corTab <- lapply(colnames(pcRes),  function(pc) {
   ighvCor <- t.test(pcRes[,pc] ~ colAnno$IGHV.status, var.equal=TRUE)
@@ -209,18 +458,72 @@ corTab <- lapply(colnames(pcRes),  function(pc) {
   filter(p <= 0.05) %>% arrange(p)
 corTab
 ```
+The first three components are shown to be correlated with trisomy12 and IGHV status.
+
+## Plot PC1 and PC2
+```{r plot_PC1_PC2,fig.height=7, fig.width=6}
+plotTab <- pcRes %>% data.frame() %>% cbind(colAnno[rownames(.),]) %>%
+  rownames_to_column("patID") %>% as_tibble()
+
+plotPCA12 <- ggplot(plotTab, aes(x=PC1, y=PC2, col = trisomy12, shape = IGHV.status)) + geom_point(size=4) +
+  xlab(sprintf("PC1 (%1.2f%%)",varExp[["PC1"]]*100)) +
+  ylab(sprintf("PC2 (%1.2f%%)",varExp[["PC2"]]*100)) +
+  scale_color_manual(values = colList) +
+  scale_shape_manual(values = c(M = 16, U =1)) +
+  xlim(-60,60) + ylim(-60,60) +
+  geom_hline(yintercept = 0, linetype ="dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype ="dashed", color = "grey50") +
+  theme_full + theme(legend.position = "bottom", legend.text = element_text(size =15), legend.title = element_text(size=15))
+
+plotPCA12
+ggsave("plot_PC1_PC2.pdf", height = 4, width = 5.5)
+```
+
+## Plot PC3 and PC4
+```{r plot_PC2_PC4,fig.height=7, fig.width=6}
+plotPCA34 <- ggplot(plotTab, aes(x=PC3, y=PC4, col = trisomy12, shape = IGHV.status)) + geom_point(size=4) +
+  xlab(sprintf("PC3 (%1.2f%%)",varExp[["PC3"]]*100)) +
+  ylab(sprintf("PC4 (%1.2f%%)",varExp[["PC4"]]*100)) +
+  scale_color_manual(values = colList) +
+  scale_shape_manual(values = c(M = 16, U =1)) +
+  geom_hline(yintercept = 0, linetype ="dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype ="dashed", color = "grey50") +
+  xlim(-60,60) + ylim(-60,60) +
+  theme_full + theme(legend.position = "bottom", legend.text = element_text(size =15), legend.title = element_text(size=15))
+
+plotPCA34
+```
+
+## Plot PC1 and PC3
+```{r plot_PC1_PC5,fig.height=7, fig.width=6}
+plotTab <- pcRes %>% data.frame() %>% cbind(colAnno[rownames(.),]) %>%
+  rownames_to_column("patID") %>% as_tibble()
+
+plotPCA13 <- ggplot(plotTab, aes(x=PC1, y=PC3, col = trisomy12, shape = IGHV.status)) + geom_point(size=4) +
+  xlab(sprintf("PC1 (%1.2f%%)",varExp[["PC1"]]*100)) +
+  ylab(sprintf("PC3 (%1.2f%%)",varExp[["PC3"]]*100)) +
+  scale_color_manual(values = colList) +
+  geom_hline(yintercept = 0, linetype ="dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype ="dashed", color = "grey50") +
+  scale_shape_manual(values = c(M = 16, U =1)) +
+  xlim(-60,60) + ylim(-60,60) +
+  theme_full + theme(legend.position = "bottom", legend.text = element_text(size =15), legend.title = element_text(size=15))
+plotPCA13
+```
 
 
 ## Pathway enrichment on PC1 and PC2
 
-PC1
+We will use gene set enrichment analysis to characterize the principal components (PCs) on pathway level.
+
+### PC1
 ```{r }
 enRes <- list()
 gmts = list(H= "../data/gmts/h.all.v6.2.symbols.gmt",
             KEGG = "../data/gmts/c2.cp.kegg.v6.2.symbols.gmt",
             C6 = "../data/gmts/c6.all.v6.2.symbols.gmt")
 
-proMat <- assays(protCLL.sub)[["QRILC"]]
+proMat <- assays(protCLL.sub)[["QRILC_combat"]]
 iPC <- "PC1"
 pc <- pcRes[,iPC][colnames(proMat)]
 designMat <- model.matrix(~1+pc)
@@ -229,7 +532,7 @@ fit2 <- eBayes(fit)
 corRes <- topTable(fit2, "pc", number = Inf) %>%
   data.frame() %>% rownames_to_column("id")
 
-inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
+inputTab <- corRes %>% filter(adj.P.Val < 0.05) %>%
   mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>% filter(!is.na(name)) %>%
   distinct(name, .keep_all = TRUE) %>%
   select(name, t) %>% data.frame() %>% column_to_rownames("name")
@@ -237,9 +540,9 @@ inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
 enRes[["Proteins associated with PC1"]] <- runGSEA(inputTab, gmts$H, "page")
 ```
 
-PC2
+### PC2
 ```{r}
-proMat <- assays(protCLL.sub)[["QRILC"]]
+proMat <- assays(protCLL.sub)[["QRILC_combat"]]
 iPC <- "PC2"
 pc <- pcRes[,iPC][colnames(proMat)]
 designMat <- model.matrix(~1+pc)
@@ -248,7 +551,7 @@ fit2 <- eBayes(fit)
 corRes <- topTable(fit2, "pc", number = Inf) %>%
   data.frame() %>% rownames_to_column("id")
 
-inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
+inputTab <- corRes %>% filter(adj.P.Val < 0.05) %>%
   mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>% filter(!is.na(name)) %>%
   distinct(name, .keep_all = TRUE) %>%
   select(name, t) %>% data.frame() %>% column_to_rownames("name")
@@ -256,21 +559,10 @@ inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
 enRes[["Proteins associated with PC2"]] <- runGSEA(inputTab, gmts$H, "page")
 ```
 
-```{r enrich_PC1PC2, fig.height=10, fig.width=12}
-cowplot::plot_grid(plotEnrichmentBar(enRes[[1]], ifFDR = TRUE, pCut = 0.05, setName = "",title = "Proteins associated with PC1"),
-                   plotEnrichmentBar(enRes[[2]], ifFDR = TRUE, pCut = 0.05, setName = "", title = "Proteins associated with PC2"),ncol=1)
-```
 
-## Pathway enrichment on PC1 and PC2
-
-PC3
-```{r }
-enRes <- list()
-gmts = list(H= "../data/gmts/h.all.v6.2.symbols.gmt",
-            KEGG = "../data/gmts/c2.cp.kegg.v6.2.symbols.gmt",
-            C6 = "../data/gmts/c6.all.v6.2.symbols.gmt")
-
-proMat <- assays(protCLL.sub)[["QRILC"]]
+### PC3
+```{r}
+proMat <- assays(protCLL.sub)[["QRILC_combat"]]
 iPC <- "PC3"
 pc <- pcRes[,iPC][colnames(proMat)]
 designMat <- model.matrix(~1+pc)
@@ -279,7 +571,7 @@ fit2 <- eBayes(fit)
 corRes <- topTable(fit2, "pc", number = Inf) %>%
   data.frame() %>% rownames_to_column("id")
 
-inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
+inputTab <- corRes %>% filter(adj.P.Val < 0.05) %>%
   mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>% filter(!is.na(name)) %>%
   distinct(name, .keep_all = TRUE) %>%
   select(name, t) %>% data.frame() %>% column_to_rownames("name")
@@ -287,100 +579,58 @@ inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
 enRes[["Proteins associated with PC3"]] <- runGSEA(inputTab, gmts$H, "page")
 ```
 
-PC4
-```{r}
-proMat <- assays(protCLL.sub)[["QRILC"]]
-iPC <- "PC4"
-pc <- pcRes[,iPC][colnames(proMat)]
-designMat <- model.matrix(~1+pc)
-fit <- limma::lmFit(proMat, designMat)
-fit2 <- eBayes(fit)
-corRes <- topTable(fit2, "pc", number = Inf) %>%
-  data.frame() %>% rownames_to_column("id")
 
-inputTab <- corRes %>% filter(adj.P.Val < 0.1) %>%
-  mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>% filter(!is.na(name)) %>%
-  distinct(name, .keep_all = TRUE) %>%
-  select(name, t) %>% data.frame() %>% column_to_rownames("name")
-
-enRes[["Proteins associated with PC4"]] <- runGSEA(inputTab, gmts$H, "page")
-```
-
-```{r enrich_PC3PC4, fig.height=10, fig.width=12}
-cowplot::plot_grid(plotEnrichmentBar(enRes[[1]], ifFDR = TRUE, pCut = 0.05, setName = "",title = "Proteins associated with PC3", removePrefix = "HALLMARK_"),
-                   plotEnrichmentBar(enRes[[2]], ifFDR = TRUE, pCut = 0.05, setName = "", title = "Proteins associated with PC4",removePrefix = "HALLMARK_"),ncol=1)
+```{r enrich_PC1PC2, fig.height=10, fig.width=12}
+cowplot::plot_grid(plotEnrichmentBar(enRes[[1]], ifFDR = TRUE, pCut = 0.05, setName = "",title = "Proteins associated with PC1", removePrefix = "HALLMARK_", setMap = setMap),
+                   plotEnrichmentBar(enRes[[2]], ifFDR = TRUE, pCut = 0.05, setName = "", title = "Proteins associated with PC2", removePrefix = "HALLMARK_", setMap = setMap),
+                   plotEnrichmentBar(enRes[[3]], ifFDR = TRUE, pCut = 0.05, setName = "", title = "Proteins associated with PC3", removePrefix = "HALLMARK_", setMap = setMap),
+                   ncol=1,
+                   align = "hv",
+                   rel_heights = c(9,3,6))
 ```
 
 
 # Hierarchical clustering
 
+## Heatmap of expression of top 1000 most variant proteins in all samples
 ```{r HC_heatmap_origin, fig.height=10, fig.width=10}
 protCLL.sub <- protCLL[!rowData(protCLL)$chromosome_name %in% c("X","Y"),]
-plotMat <- assays(protCLL.sub)[["QRILC"]]
+plotMat <- assays(protCLL.sub)[["QRILC_combat"]]
+sds <- rowSds(plotMat) 
+plotMat <- plotMat[order(sds, decreasing = T)[1:1000],]
 colAnno <- colData(protCLL)[,c("IGHV.status","trisomy12")] %>%
   data.frame()
 colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
 
-plotMat <- mscale(plotMat, center = 5)
+plotMat <- mscale(plotMat, center = TRUE, scale = TRUE)
 
 annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
                 IGHV.status = c(M = colList[3], U = colList[4]))
 pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none",
-                   clustering_method = "ward.D2",
+                   clustering_method = "average", clustering_distance_cols = "correlation",
                    color = colorRampPalette(c(colList[2],"white",colList[1]))(100),
                    breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
                    show_rownames = FALSE, show_colnames = FALSE,
                    treeheight_row = 0)
 ```
 
-# Summarise significant associations
+## Heatmap of sample-sample correlation matrix based on protein expression
+```{r, fig.height=4, fig.width=6}
+callback = function(hc, mat){
+   sv = svd(t(mat))$v[,1]
+   dend = reorder(as.dendrogram(hc), wts = sv)
+   as.hclust(dend)
+}
 
-## Bar plot of number of significant associations (10% FDR)
-
-Load the list of differentially expression proteins generated by Section 2
-```{r}
-load("../output/deResList.RData")
+breaks <- c(seq(-1,-0.39, length.out=20), seq(-0.4,0.4, length.out=40), seq(0.41, 1, length.out =20))
+colorList <- c(rep(colList[2],20), colorRampPalette(c(colList[2],"white",colList[1]))(40), rep(colList[1], 20))
+#colList <- colorRampPalette(c(colList[2],"white",colList[1]))(100)
+corMat <- cor(plotMat)
+#corMat <- mscale(corMat, center=FALSE, scale=FALSE, censor = 0.5)
+pheatmap(corMat, annotation_col = colAnno, clustering_method = "ward.D2", annotation_colors = annoCol,
+         color =  colorList, border_color = NA,
+           breaks = breaks,show_rownames = FALSE, show_colnames = FALSE,
+          treeheight_col = 0, treeheight_row = 20)
 ```
 
-```{r}
-plotTab <- resList %>% group_by(Gene) %>%
-  summarise(nFDR.local = sum(adj.P.Val <= 0.1),
-            nFDR.global = sum(adj.P.global <= 0.1),
-            nFDR.IHW = sum(adj.P.IHW <= 0.1),
-            nP = sum(P.Value < 0.05))
-
-#use IHW for adjusting p-values
-resList <- mutate(resList, adj.P.Val = adj.P.IHW)
-```
-
-```{r number_of_association, fig.height=5, fig.width=8}
-plotTab <- arrange(plotTab, desc(nFDR.IHW)) %>% mutate(Gene = factor(Gene, levels = Gene))
-numCorBar <- ggplot(plotTab, aes(x=Gene, y = nFDR.IHW)) + geom_bar(stat="identity",fill=colList[2]) + 
-  geom_text(aes(label = paste0("n=", nFDR.IHW)),vjust=-1,col=colList[1]) + ylim(0,1200) +
-  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-  ylab("Number of associations\n(10% FDR)") + xlab("")
-
-numCorBar
-```
-
-# Assemble figure
-
-```{r Figure1,fig.height=15, fig.width=18}
-designPlot <- draw_image("../data/Fig1A.png")
-p <- ggdraw() + designPlot
-
-leftCol <- plot_grid(p, 
-                     plot_grid(plotPCA12, plotPCA34, ncol=2, rel_widths = c(.45,0.55)),
-                     plot_grid(numCorBar,NULL,rel_widths = c(0.8,0.2),ncol=2), ncol = 1,
-                     labels = c("A","E","F"), label_size = 20, vjust = c(1.5, 0,-0.1),
-                     rel_heights = c(1.2,1,1))
-
-
-rightCol <- plot_grid(corHistPlot,
-                       goodCorPlot,
-                       badCorPlot, ncol=1, rel_heights = c(0.28,0.48,0.24), labels = c("B","C","D"), label_size = 20)
-#pdf("test.pdf", height = 13, width = 18)
-plot_grid(leftCol, rightCol, rel_widths = c(0.6, 0.4))
-#dev.off()
-```
 

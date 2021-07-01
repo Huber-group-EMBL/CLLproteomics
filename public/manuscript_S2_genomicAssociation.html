@@ -15,12 +15,22 @@
 
 <title>Section 2: Identifying proteins associated disease drivers in CLL</title>
 
+<script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
@@ -39,12 +49,18 @@ div.section {
 }
 </style>
 
-<style type="text/css">code{white-space: pre;}</style>
+
+
 <style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -57,32 +73,7 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
 
 
 
@@ -92,10 +83,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -112,40 +99,13 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 51px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -173,7 +133,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -185,7 +145,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -196,10 +156,23 @@ $(document).ready(function () {
   var menuAnchor = $('a[href="' + href + '"]');
 
   // mark it active
-  menuAnchor.parent().addClass('active');
+  menuAnchor.tab('show');
 
   // if it's got a parent navbar menu mark it active as well
   menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -211,7 +184,6 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -340,13 +312,13 @@ div.tocify {
 
 
 <!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row-fluid">
-<div class="col-xs-12 col-sm-4 col-md-3">
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
 <div id="TOC" class="tocify">
 </div>
 </div>
 
-<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
 
 
 
@@ -370,7 +342,7 @@ div.tocify {
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://git.embl.de/jlu/Proteomics">
-    <span class="fa fa-gitlab"></span>
+    <span class="fas fa-gitlab"></span>
      
     Source code
   </a>
@@ -380,11 +352,11 @@ div.tocify {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
-<div class="btn-group pull-right">
-<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
-<ul class="dropdown-menu" style="min-width: 50px;">
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
 </ul>
@@ -419,13 +391,13 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-10-09
+<strong>Last updated:</strong> 2021-05-05
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 5 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 2
 </p>
 <p>
-<strong>Knit directory:</strong> <code>CLLproteomics_publish/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+<strong>Knit directory:</strong> <code>CLLproteomics_publish_revision/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
 </p>
 <p>
 This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
@@ -443,7 +415,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you'll want to first commit it to the Git repo. If you're still working on the analysis, you can ignore this warning. When you're finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -455,7 +427,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it's best to always run the code in an empty environment.</p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
 </div>
 </div>
 </div>
@@ -486,12 +458,39 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongdetected"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>Cache:</strong> detected </a>
 </p>
 </div>
-<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div id="strongCachestrongdetected" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+The following chunks had caches available:
+<ul>
+<li>
+unnamed-chunk-24
+</li>
+<li>
+unnamed-chunk-26
+</li>
+<li>
+unnamed-chunk-27
+</li>
+<li>
+unnamed-chunk-5
+</li>
+<li>
+unnamed-chunk-6
+</li>
+<li>
+unnamed-chunk-7
+</li>
+<li>
+unnamed-chunk-8
+</li>
+<li>
+unnamed-chunk-9
+</li>
+</ul>
+<p>To ensure reproducibility of the results, delete the cache directory <code>manuscript_S2_genomicAssociation_cache</code> and re-run the analysis. To have workflowr automatically delete the cache directory prior to building the file, set <code>delete_cache = TRUE</code> when running <code>wflow_build()</code> or <code>wflow_publish()</code>.</p>
 </div>
 </div>
 </div>
@@ -531,8 +530,8 @@ Ignored files:
     Ignored:    .Rproj.user/
     Ignored:    analysis/.DS_Store
     Ignored:    analysis/.Rhistory
-    Ignored:    analysis/figure/
     Ignored:    analysis/manuscript_S1_Overview_cache/
+    Ignored:    analysis/manuscript_S2_genomicAssociation_cache/
     Ignored:    code/.DS_Store
     Ignored:    code/.Rhistory
     Ignored:    data/.DS_Store
@@ -540,32 +539,71 @@ Ignored files:
 
 Untracked files:
     Untracked:  analysis/.trisomy12_norm.pdf
+    Untracked:  analysis/cohortComposition_all.pdf
     Untracked:  analysis/manuscript_S1_Overview.Rmd
     Untracked:  analysis/manuscript_S2_genomicAssociation.Rmd
     Untracked:  analysis/manuscript_S3_trisomy12.Rmd
-    Untracked:  analysis/manuscript_S4_IGHV.Rmd
-    Untracked:  analysis/manuscript_S5_trisomy19.Rmd
+    Untracked:  analysis/manuscript_S4_trisomy19.Rmd
+    Untracked:  analysis/manuscript_S5_IGHV.Rmd
     Untracked:  analysis/manuscript_S6_del11q.Rmd
     Untracked:  analysis/manuscript_S7_SF3B1.Rmd
     Untracked:  analysis/manuscript_S8_drugResponse_Outcomes.Rmd
     Untracked:  analysis/manuscript_S9_STAT2.Rmd
+    Untracked:  analysis/plot_PC1_PC2.pdf
+    Untracked:  analysis/timsTOF_validate.Rmd
     Untracked:  code/utils.R
+    Untracked:  data/Annotation file March 2021.xlsx
+    Untracked:  data/CAS9results.xlsx
+    Untracked:  data/CNV_onChrom.RData
+    Untracked:  data/ComplexParticipantsPubMedIdentifiers_human.txt
     Untracked:  data/Fig1A.png
+    Untracked:  data/IGLV321_SupplementalTables_R2.xlsx
+    Untracked:  data/MOFAout.RData
+    Untracked:  data/MOFAout_atLeast3.RData
+    Untracked:  data/STATexprPCR.xlsx
+    Untracked:  data/Western_blot_results_20210309_short.csv
+    Untracked:  data/Western_blot_results_separate_blots.xlsx
+    Untracked:  data/allComplexes.txt
     Untracked:  data/ddsrna_enc.RData
     Untracked:  data/exprCNV_enc.RData
+    Untracked:  data/geneAnno.RData
     Untracked:  data/gmts/
+    Untracked:  data/ic50.RData
+    Untracked:  data/mofaIn.RData
+    Untracked:  data/mofaIn_atLeast3.RData
     Untracked:  data/patMeta_enc.RData
     Untracked:  data/pepCLL_lumos_enc.RData
-    Untracked:  data/pheno1000_enc.RData
+    Untracked:  data/protMOFA.RData
     Untracked:  data/proteins_in_complexes
-    Untracked:  data/proteomic_LUMOS_enc.RData
+    Untracked:  data/proteomic_LUMOS_2pep_enc.RData
+    Untracked:  data/proteomic_explore_enc.RData
+    Untracked:  data/proteomic_independent_all_enc.RData
+    Untracked:  data/proteomic_independent_enc.RData
     Untracked:  data/proteomic_timsTOF_enc.RData
+    Untracked:  data/screenData_enc.RData
+    Untracked:  data/setToPathway.txt
     Untracked:  data/survival_enc.RData
+    Untracked:  output/MSH6_splicing.svg
+    Untracked:  output/SUGP1_splicing.svg
     Untracked:  output/deResList.RData
+    Untracked:  output/deResListBatch2.RData
+    Untracked:  output/deResListRNA.RData
+    Untracked:  output/deResListRNA_allGene.RData
+    Untracked:  output/deResList_WBC.RData
+    Untracked:  output/deResList_batch1.RData
+    Untracked:  output/deResList_batch3.RData
+    Untracked:  output/deResList_independent.RData
     Untracked:  output/deResList_timsTOF.RData
     Untracked:  output/dxdCLL.RData
     Untracked:  output/dxdCLL2.RData
-    Untracked:  output/splicingResults.RData
+    Untracked:  output/exprCNV.RData
+    Untracked:  output/geneAnno.RData
+    Untracked:  output/int_pairs.csv
+    Untracked:  output/lassoResults_CPS.RData
+    Untracked:  output/resOutcome_batch1.RData
+    Untracked:  output/resOutcome_batch13.RData
+    Untracked:  output/resOutcome_batch2.RData
+    Untracked:  output/resOutcome_batch3.RData
 
 Unstaged changes:
     Modified:   analysis/_site.yml
@@ -586,7 +624,7 @@ Unstaged changes:
 
 </code></pre>
 <p>
-Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
 </p>
 </div>
 </div>
@@ -606,6 +644,7 @@ There are no past versions. Publish this analysis with <code>wflow_publish()</co
 <h1>Load packages and datasets</h1>
 <pre class="r"><code>library(limma)
 library(DESeq2)
+library(qvalue)
 library(proDA)
 library(IHW)
 library(SummarizedExperiment)
@@ -614,23 +653,25 @@ library(tidyverse)
 #load datasets
 load(&quot;../data/patMeta_enc.RData&quot;)
 load(&quot;../data/ddsrna_enc.RData&quot;)
-load(&quot;../data/proteomic_LUMOS_enc.RData&quot;)
+load(&quot;../data/proteomic_explore_enc.RData&quot;)
 source(&quot;../code/utils.R&quot;)
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c(&quot;png&quot;,&quot;pdf&quot;))</code></pre>
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c(&quot;png&quot;,&quot;pdf&quot;))
+#protCLL &lt;- protCLL[,colnames(protCLL) %in% patMeta$Patient.ID]</code></pre>
 </div>
 <div id="preprocessing" class="section level1">
 <h1>Preprocessing</h1>
 <div id="process-proteomics-data" class="section level2">
 <h2>Process proteomics data</h2>
-<pre class="r"><code>protCLL &lt;- protCLL[rowData(protCLL)$uniqueMap,]
-protMat &lt;- assays(protCLL)[[&quot;count&quot;]] #without imputation</code></pre>
+<pre class="r"><code>#protCLL &lt;- protCLL[rowData(protCLL)$uniqueMap,]
+protMat &lt;- assays(protCLL)[[&quot;count&quot;]] #without imputation
+protMatLog &lt;- assays(protCLL)[[&quot;log2Norm&quot;]]</code></pre>
 </div>
 <div id="prepare-genomic-background" class="section level2">
 <h2>Prepare genomic background</h2>
 <div id="get-mutations-with-at-least-5-cases" class="section level3">
 <h3>Get mutations with at least 5 cases</h3>
 <pre class="r"><code>geneMat &lt;-  patMeta[match(colnames(protMat), patMeta$Patient.ID),] %&gt;%
-  select(Patient.ID, IGHV.status, del11p:U1) %&gt;%
+  select(Patient.ID, IGHV.status, del11q:U1) %&gt;%
   mutate_if(is.factor, as.character) %&gt;% mutate(IGHV.status = ifelse(IGHV.status == &quot;M&quot;, 1,0)) %&gt;%
   mutate_at(vars(-Patient.ID), as.numeric) %&gt;% #assign a few unknown mutated cases to wildtype
   data.frame() %&gt;% column_to_rownames(&quot;Patient.ID&quot;)
@@ -639,62 +680,52 @@ protMat &lt;- assays(protCLL)[[&quot;count&quot;]] #without imputation</code></p
 geneMat &lt;- geneMat[,apply(geneMat,2, function(x) sum(x %in% 1, na.rm = TRUE))&gt;=5]</code></pre>
 <p><strong>Mutations that will be tested</strong></p>
 <pre class="r"><code>colnames(geneMat)</code></pre>
-<pre><code> [1] &quot;IGHV.status&quot; &quot;del11q&quot;      &quot;del13q&quot;      &quot;trisomy12&quot;   &quot;trisomy19&quot;  
- [6] &quot;DDX3X&quot;       &quot;EGR2&quot;        &quot;NOTCH1&quot;      &quot;SF3B1&quot;       &quot;TP53&quot;       </code></pre>
-</div>
-<div id="plot-to-summarise-genomic-background" class="section level3">
-<h3>Plot to summarise genomic background</h3>
-<pre class="r"><code>sortTab &lt;- function(sumTab) {
-  i &lt;- ncol(sumTab)
-  #print(i)
-  if (i == 1) {
-    #print(rownames(sumTab)[order(sumTab[,i])])
-    return(rownames(sumTab)[order(sumTab[,i])])
-  }
-  orderRow &lt;- c(sortTab(sumTab[sumTab[,i]==0, seq(1,i-1), drop = FALSE]), sortTab(sumTab[sumTab[,i]==1, seq(1,i-1), drop = FALSE]))
-  return(orderRow)
-}
-
-geneMat.sort &lt;- geneMat
-geneMat.sort[is.na(geneMat.sort)] &lt;- 0
-sortedGene &lt;- names(sort(colSums(geneMat.sort)))
-geneMat.sort &lt;- geneMat.sort[,sortedGene]
-sortedPat &lt;- sortTab(geneMat.sort)</code></pre>
-<pre class="r"><code>plotTab &lt;- geneMat %&gt;% rownames_to_column(&quot;patID&quot;) %&gt;% mutate_all(as.character) %&gt;%
-  gather(key = &quot;gene&quot;, value = &quot;status&quot;, -patID) %&gt;%
-  mutate(gene = factor(gene, levels = sortedGene), patID = factor(patID, levels = sortedPat)) %&gt;%
-  mutate(status = ifelse(is.na(status),&quot;NA&quot;,status))
-
-ggplot(plotTab, aes(x=patID, y = gene, fill = status)) + 
-  geom_tile(color = &quot;black&quot;) +
-  theme_minimal() + 
-  scale_fill_manual(values = c(&quot;1&quot; = colList[4],&quot;0&quot; =&quot;white&quot;, &quot;NA&quot; = &quot;grey80&quot;)) +
-  theme(axis.text.x = element_text(angle = 90, hjust =1, vjust=0.5),
-        panel.grid = element_blank(), legend.position = &quot;none&quot;) +
-  ylab(&quot;&quot;) + xlab(&quot;Patient ID&quot;)</code></pre>
-<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/geneSummary-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre><code> [1] &quot;IGHV.status&quot; &quot;del11q&quot;      &quot;del13q&quot;      &quot;del17p&quot;      &quot;trisomy12&quot;  
+ [6] &quot;trisomy19&quot;   &quot;NOTCH1&quot;      &quot;ATM&quot;         &quot;BRAF&quot;        &quot;DDX3X&quot;      
+[11] &quot;EGR2&quot;        &quot;MED12&quot;       &quot;SF3B1&quot;       &quot;TP53&quot;       </code></pre>
 </div>
 </div>
 </div>
-<div id="differential-protein-expression-using-proda" class="section level1">
-<h1>Differential protein expression using proDA</h1>
-<div id="for-ighv-and-trisomy12" class="section level2">
-<h2>For IGHV and trisomy12</h2>
-<p>Fit the probailistic dropout model</p>
+<div id="differential-protein-expression-using-proda-lumos-dataset" class="section level1">
+<h1>Differential protein expression using proDA (LUMOS dataset)</h1>
+<p>We will use proDA, which is based on a linear model that considers the missing values using a probabilistic drop out model, to identify protein expression changes related to genotypes.<br />
+To avoid potential confounding effect of IGHV and trisomy12, which are main drivers in CLL proteomic profile, we will block for IGHV status when we are testing trisomy12 and block trisomy12 when testing for IGHV status. For other genotypes, we will block for both IGHV status and trisomy12.</p>
+<div id="identify-protein-expression-changes-related-to-ighv-and-trisomy12" class="section level2">
+<h2>Identify protein expression changes related to IGHV and trisomy12</h2>
+<div id="fit-the-probailistic-dropout-model" class="section level3">
+<h3>Fit the probailistic dropout model</h3>
 <pre class="r"><code>designMat &lt;- geneMat[  ,c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
-fit &lt;- proDA(protMat, design = ~ .,
+designMat[,&quot;batch&quot;] &lt;- factor(protCLL[,rownames(designMat)]$batch)
+fit &lt;- proDA(protMat, design = ~ . ,
              col_data = designMat)</code></pre>
-<p>Test for differentially expressed proteins</p>
+</div>
+<div id="limma-for-calculating-log2-fold-change" class="section level3">
+<h3>Limma for calculating log2 fold change</h3>
+<pre class="r"><code>lmDesign &lt;- model.matrix(~., designMat)
+lmFit &lt;- lmFit(protMatLog, design = lmDesign)
+fit2 &lt;- eBayes(lmFit)</code></pre>
+</div>
+<div id="test-for-differentially-expressed-proteins" class="section level3">
+<h3>Test for differentially expressed proteins</h3>
 <pre class="r"><code>resList.ighvTri12 &lt;- lapply(c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;), function(n) {
   contra &lt;- n
   resTab &lt;- test_diff(fit, contra) %&gt;%
     dplyr::rename(id = name, logFC = diff, t=t_statistic,
                   P.Value = pval, adj.P.Val = adj_pval) %&gt;% 
     mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
-    select(name, id, logFC, t, P.Value, adj.P.Val) %&gt;%  
+    select(name, id, logFC, t, P.Value, adj.P.Val, n_obs) %&gt;%  
     arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
     as_tibble()
+  
+  foldTab &lt;- topTable(fit2, coef = n, number = &quot;all&quot;) %&gt;%
+    as_tibble(rownames = &quot;id&quot;) %&gt;% select(id, logFC) %&gt;%
+    dplyr::rename(log2FC = logFC)
+  
+  resTab &lt;- left_join(resTab, foldTab, by = &quot;id&quot;)
+  resTab
+  
 }) %&gt;% bind_rows()</code></pre>
+</div>
 </div>
 <div id="test-for-other-variantions-blocking-for-ighv-and-trisomy12" class="section level2">
 <h2>Test for other variantions (blocking for IGHV and trisomy12)</h2>
@@ -702,6 +733,7 @@ fit &lt;- proDA(protMat, design = ~ .,
 <pre class="r"><code>otherGenes &lt;- colnames(geneMat)[!colnames(geneMat)%in% c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
 resList &lt;- lapply(otherGenes, function(n) {
   designMat &lt;- geneMat[,c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;,n)]
+  designMat[,&quot;batch&quot;] &lt;- factor(protCLL[,rownames(designMat)]$batch)
   designMat &lt;- designMat[!is.na(designMat[[n]]),]
   testMat &lt;- protMat[,rownames(designMat)]
   
@@ -713,9 +745,20 @@ resList &lt;- lapply(otherGenes, function(n) {
     dplyr::rename(id = name, logFC = diff, t=t_statistic,
                   P.Value = pval, adj.P.Val = adj_pval) %&gt;% 
     mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;%
-    select(name, id, logFC, t, P.Value, adj.P.Val) %&gt;%  
+    select(name, id, logFC, t, P.Value, adj.P.Val, n_obs) %&gt;%  
     arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
     as_tibble()
+
+  #calculte log2 fold change
+  lmDesign &lt;- model.matrix(~., designMat)
+  protMatTest &lt;- protMatLog[,rownames(lmDesign)]
+  lmFit &lt;- lmFit(protMatTest, design = lmDesign)
+  fit2 &lt;- eBayes(lmFit)
+  foldTab &lt;- topTable(fit2, coef = n, number = &quot;all&quot;) %&gt;%
+    as_tibble(rownames = &quot;id&quot;) %&gt;% select(id, logFC) %&gt;%
+    dplyr::rename(log2FC = logFC)
+  resTab &lt;- left_join(resTab, foldTab, by = &quot;id&quot;)
+
   resTab
 }) %&gt;% bind_rows()</code></pre>
 <p>Combine the results</p>
@@ -731,49 +774,71 @@ ihwRes &lt;- ihw(P.Value ~ factor(Gene), data= resList, alpha=0.1)
 resList &lt;- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))</code></pre>
 <p>Save the results for re-using</p>
 <pre class="r"><code>save(resList, file = &quot;../output/deResList.RData&quot;)</code></pre>
-<p>Load the pre-calculated results (differential expression tests take long time.)</p>
+</div>
+<div id="bar-plot-of-number-of-significant-associations-with-proteins-5-fdr" class="section level2">
+<h2>Bar plot of number of significant associations with proteins (5% FDR)</h2>
+<p>Load the list of differentially expression proteins generated by Section 2</p>
 <pre class="r"><code>load(&quot;../output/deResList.RData&quot;)</code></pre>
-</div>
-</div>
-<div id="summarise-significant-associations" class="section level1">
-<h1>Summarise significant associations</h1>
-<div id="bar-plot-of-number-of-significant-associations-10-fdr" class="section level2">
-<h2>Bar plot of number of significant associations (10% FDR)</h2>
 <pre class="r"><code>plotTab &lt;- resList %&gt;% group_by(Gene) %&gt;%
-  summarise(nFDR.local = sum(adj.P.Val &lt;= 0.1),
-            nFDR.global = sum(adj.P.global &lt;= 0.1),
-            nFDR.IHW = sum(adj.P.IHW &lt;= 0.1),
-            nP = sum(P.Value &lt; 0.05))
+  summarise(nFDR.local = sum(adj.P.Val &lt;= 0.05))</code></pre>
+<p>Individual gene adjusted</p>
+<pre class="r"><code>plotTab &lt;- arrange(plotTab, desc(nFDR.local)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
+numCorBar &lt;- ggplot(plotTab, aes(x=Gene, y = nFDR.local)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
+  geom_text(aes(label = nFDR.local),vjust=-1,col=&quot;black&quot;,size=5) + ylim(0,1200) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab(&quot;Number of associations\n(5% FDR)&quot;) + xlab(&quot;&quot;)
 
-#use IHW for adjusting p-values
-resList &lt;- mutate(resList, adj.P.Val = adj.P.IHW)</code></pre>
-<pre class="r"><code>plotTab &lt;- arrange(plotTab, desc(nFDR.IHW)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
-ggplot(plotTab, aes(x=Gene, y = nFDR.IHW)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
-  geom_text(aes(label = paste0(&quot;n=&quot;, nFDR.IHW)),vjust=-1,col=colList[1]) + ylim(0,1200) +
-  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-  ylab(&quot;Number of associations\n(10% FDR)&quot;) + xlab(&quot;&quot;)</code></pre>
-<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/number_of_association-1.png" width="768" style="display: block; margin: auto;" /></p>
+numCorBar</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/number_of_association_local-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
-<div id="bar-plot-of-number-of-raw-p-value-0.05" class="section level2">
-<h2>Bar plot of number of raw P-value &lt; 0.05</h2>
-<pre class="r"><code>plotTab &lt;- arrange(plotTab, desc(nP)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
-ggplot(plotTab, aes(x=Gene, y = nP)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
-  geom_text(aes(label = paste0(&quot;n=&quot;, nP)),vjust=-1,col=colList[1]) + ylim(0,1500) +
-  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-  ylab(&quot;Number of associations\n(nominal P-value &lt; 0.05)&quot;) + xlab(&quot;&quot;)</code></pre>
-<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/number_of_association_pval-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="some-examples-of-protein-gene-associations-that-passed-0.01-p-value-but-not-5-fdr" class="section level1">
+<h1>Some examples of protein-gene associations that passed 0.01 p-value but not 5% FDR</h1>
+<pre class="r"><code>protTab &lt;- sumToTidy(protCLL, rowID = &quot;uniprotID&quot;, colID = &quot;patID&quot;) %&gt;%
+  mutate(count = count_combat)</code></pre>
+<div id="del13q" class="section level2">
+<h2>Del13q</h2>
+<pre class="r"><code>resListSub &lt;- filter(resList, Gene == &quot;del13q&quot;)
+nameList &lt;- c(&quot;CD22&quot;,&quot;CD72&quot;)
+
+plotTab &lt;- protTab %&gt;% filter(hgnc_symbol %in% nameList) %&gt;%
+  mutate(del13q = patMeta[match(patID, patMeta$Patient.ID),]$del13q) %&gt;%
+  mutate(status = ifelse(del13q %in% 1,&quot;del(13)(q14)&quot;,&quot;other&quot;),
+         name = hgnc_symbol) %&gt;%
+  mutate(status = factor(status, levels = c(&quot;other&quot;,&quot;del(13)(q14)&quot;)))
+pList &lt;- plotBox(plotTab, pValTabel = resListSub, y_lab = &quot;Protein expression&quot;)
+del13qBox &lt;- cowplot::plot_grid(plotlist= pList, ncol=2)
+del13qBox</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/del13q_example-1.png" width="864" style="display: block; margin: auto;" /></p>
+</div>
+<div id="tp53" class="section level2">
+<h2>TP53</h2>
+<pre class="r"><code>resListSub &lt;- filter(resList, Gene == &quot;TP53&quot;)
+nameList &lt;- c(&quot;BCAS2&quot;)
+
+
+plotTab &lt;- protTab %&gt;% filter(hgnc_symbol %in% nameList) %&gt;%
+  mutate(TP53 = patMeta[match(patID, patMeta$Patient.ID),]$TP53) %&gt;%
+  mutate(status = ifelse(TP53 %in% 1,&quot;Mut&quot;,&quot;WT&quot;),
+         name = hgnc_symbol) %&gt;%
+  mutate(status = factor(status, levels = c(&quot;WT&quot;,&quot;Mut&quot;)))
+pList &lt;- plotBox(plotTab, pValTabel = resListSub, y_lab = &quot;Protein expression&quot;)
+tp53Box &lt;- cowplot::plot_grid(plotlist= pList, ncol=1)
+tp53Box</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/TP53_BCAS2-1.png" width="384" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="association-test-in-timstof-data" class="section level1">
 <h1>Association test in timsTOF data</h1>
-<div id="for-ighv-and-trisomy12-1" class="section level2">
+<p>The same procedure as for the LUMOS dataset will be used.</p>
+<div id="for-ighv-and-trisomy12" class="section level2">
 <h2>For IGHV and trisomy12</h2>
 <p>Load timsTOF data</p>
 <pre class="r"><code>load(&quot;../data/proteomic_timsTOF_enc.RData&quot;)
 protMat &lt;- assays(protCLL)[[&quot;count&quot;]] #without imputation</code></pre>
 <p>Genetic data</p>
 <pre class="r"><code>geneMat &lt;-  patMeta[match(colnames(protMat), patMeta$Patient.ID),] %&gt;%
-  select(Patient.ID, IGHV.status, trisomy12, SF3B1, trisomy19, del11q) %&gt;%
+  select(Patient.ID, IGHV.status, trisomy12, SF3B1, trisomy19, del11q, del13q) %&gt;%
   mutate_if(is.factor, as.character) %&gt;% mutate(IGHV.status = ifelse(IGHV.status == &quot;M&quot;, 1,0)) %&gt;%
   mutate_at(vars(-Patient.ID), as.numeric) %&gt;% #assign a few unknown mutated cases to wildtype
   data.frame() %&gt;% column_to_rownames(&quot;Patient.ID&quot;)</code></pre>
@@ -826,8 +891,96 @@ resList &lt;- mutate(resList, adj.P.global = p.adjust(P.Value, method = &quot;BH
 #using IHW
 ihwRes &lt;- ihw(P.Value ~ factor(Gene), data= resList, alpha=0.1)
 resList &lt;- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))</code></pre>
-<p>Save the results for re-using</p>
 <pre class="r"><code>save(resList, file = &quot;../output/deResList_timsTOF.RData&quot;)</code></pre>
+</div>
+<div id="bar-plot-of-number-of-significant-associations-with-proteins-5-fdr-1" class="section level2">
+<h2>Bar plot of number of significant associations with proteins (5% FDR)</h2>
+<p>Load the list of differentially expression proteins generated by Section 2</p>
+<pre class="r"><code>load(&quot;../output/deResList_timsTOF.RData&quot;)</code></pre>
+<pre class="r"><code>plotTab &lt;- resList %&gt;% group_by(Gene) %&gt;%
+  summarise(nFDR.local = sum(adj.P.Val &lt;= 0.05))</code></pre>
+<pre class="r"><code>plotTab &lt;- arrange(plotTab, desc(nFDR.local)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
+numCorBar &lt;- ggplot(plotTab, aes(x=Gene, y = nFDR.local)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
+  geom_text(aes(label = nFDR.local),vjust=-1,col=&quot;black&quot;,size=5) + ylim(0,1000) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab(&quot;Number of associations\n(5% FDR)&quot;) + xlab(&quot;&quot;)
+
+numCorBar</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/number_of_association_local_tims-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="identify-assocations-between-rna-expression-and-genotypes" class="section level1">
+<h1>Identify assocations between RNA expression and genotypes</h1>
+<p>DEseq2 will be used to identify RNA expression changes related to genotypes. The same blocking strategy as used for the proteomic data will also be used for RNAseq data.</p>
+<div id="prepare-rna-seq-data" class="section level2">
+<h2>Prepare RNA seq data</h2>
+<p>Subset for samples with proteomics</p>
+<pre class="r"><code>ddsSub &lt;- dds[,dds$PatID %in% colnames(protCLL)]
+#how many samples?
+
+ddsSub &lt;- ddsSub[rownames(ddsSub) %in% rowData(protCLL)$ensembl_gene_id,]
+
+#how many genes without any RNA expression detected?
+#table(rowSums(counts(ddsSub)) &gt; 0)
+
+ddsSub &lt;- ddsSub[rowSums(counts(ddsSub)) &gt; 0, ]
+colData(ddsSub) &lt;- cbind(colData(ddsSub), geneMat[colnames(ddsSub),])</code></pre>
+<div id="test-for-ighv-and-trisomy12" class="section level3">
+<h3>Test For IGHV and trisomy12</h3>
+<pre class="r"><code>design(ddsSub) &lt;- ~ IGHV.status + trisomy12
+deRes &lt;- DESeq(ddsSub)</code></pre>
+<p>Test for differentially expressed proteins</p>
+<pre class="r"><code>resList.ighvTri12 &lt;- lapply(c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;), function(n) {
+  resTab &lt;- results(deRes, name = n, tidy = TRUE) %&gt;%
+    dplyr::rename(id = row, log2FC = log2FoldChange, t=stat,
+                  P.Value = pvalue, adj.P.Val = padj) %&gt;% 
+    mutate(name = rowData(ddsSub[id,])$symbol) %&gt;%
+    select(name, id, log2FC, t, P.Value, adj.P.Val) %&gt;%  
+    arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
+    as_tibble()
+}) %&gt;% bind_rows()</code></pre>
+</div>
+<div id="test-for-other-variantions-blocking-for-ighv-and-trisomy12-2" class="section level3">
+<h3>Test for other variantions (blocking for IGHV and trisomy12)</h3>
+<pre class="r"><code>otherGenes &lt;- colnames(geneMat)[!colnames(geneMat)%in% c(&quot;IGHV.status&quot;,&quot;trisomy12&quot;)]
+resList &lt;- lapply(otherGenes, function(n) {
+  
+  ddsTest &lt;- ddsSub[,!is.na(ddsSub[[n]])]
+  design(ddsTest) &lt;- as.formula(paste0(&quot;~ IGHV.status + trisomy12 + &quot;,n))
+  deRes &lt;- DESeq(ddsTest, betaPrior = FALSE)
+
+  resTab &lt;- results(deRes, name = n, tidy = TRUE) %&gt;%
+    dplyr::rename(id = row, log2FC = log2FoldChange, t=stat,
+                  P.Value = pvalue, adj.P.Val = padj) %&gt;% 
+    mutate(name = rowData(ddsSub[id,])$symbol) %&gt;%
+    select(name, id, log2FC, t, P.Value, adj.P.Val) %&gt;%  
+    arrange(P.Value) %&gt;% mutate(Gene = n) %&gt;%
+    as_tibble()
+  
+  resTab
+}) %&gt;% bind_rows()</code></pre>
+<p>Combine the results</p>
+<pre class="r"><code>resListRNA &lt;- bind_rows(resList.ighvTri12, resList)</code></pre>
+<p>Save the results for re-using</p>
+<pre class="r"><code>save(resListRNA, file = &quot;../output/deResListRNA.RData&quot;)</code></pre>
+<p>Load the pre-calculated results (differential expression tests take long time.)</p>
+<pre class="r"><code>load(&quot;../output/deResListRNA.RData&quot;)</code></pre>
+</div>
+<div id="bar-plot-of-number-of-significant-associations-5-fdr" class="section level3">
+<h3>Bar plot of number of significant associations (5% FDR)</h3>
+<pre class="r"><code>fdrCut = 0.05
+plotTab &lt;- resListRNA %&gt;% group_by(Gene) %&gt;%
+  summarise(nFDR.local = sum(adj.P.Val &lt;= fdrCut, na.rm=TRUE),
+            nP = sum(P.Value &lt; 0.05))</code></pre>
+<p>P values adjusted for each variant</p>
+<pre class="r"><code>#local adjusted P-values
+
+plotTab &lt;- arrange(plotTab, desc(nFDR.local)) %&gt;% mutate(Gene = factor(Gene, levels = Gene))
+ggplot(plotTab, aes(x=Gene, y = nFDR.local)) + geom_bar(stat=&quot;identity&quot;,fill=colList[2]) + 
+  geom_text(aes(label = paste0(nFDR.local)),vjust=-1,col=&quot;black&quot;) + 
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab(&quot;Number of associations\n(5% FDR)&quot;) + xlab(&quot;&quot;)</code></pre>
+<p><img src="figure/manuscript_S2_genomicAssociation.Rmd/unnamed-chunk-31-1.png" width="864" style="display: block; margin: auto;" /></p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -836,13 +989,13 @@ resList &lt;- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))</code></pre>
 </p>
 <div id="workflowr-sessioninfo" class="collapse">
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 3.6.0 (2019-04-26)
-Platform: x86_64-apple-darwin15.6.0 (64-bit)
-Running under: macOS  10.15.6
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS  10.16
 
 Matrix products: default
-BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
-LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -852,53 +1005,55 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] latex2exp_0.4.0             forcats_0.5.0              
- [3] stringr_1.4.0               dplyr_1.0.0                
- [5] purrr_0.3.4                 readr_1.3.1                
- [7] tidyr_1.1.0                 tibble_3.0.3               
- [9] ggplot2_3.3.2               tidyverse_1.3.0            
-[11] IHW_1.14.0                  proDA_1.1.2                
-[13] DESeq2_1.26.0               SummarizedExperiment_1.16.1
-[15] DelayedArray_0.12.3         BiocParallel_1.20.1        
-[17] matrixStats_0.56.0          Biobase_2.46.0             
-[19] GenomicRanges_1.38.0        GenomeInfoDb_1.22.1        
-[21] IRanges_2.20.2              S4Vectors_0.24.4           
-[23] BiocGenerics_0.32.0         limma_3.42.2               
+ [1] ggbeeswarm_0.6.0            latex2exp_0.4.0            
+ [3] forcats_0.5.1               stringr_1.4.0              
+ [5] dplyr_1.0.5                 purrr_0.3.4                
+ [7] readr_1.4.0                 tidyr_1.1.3                
+ [9] tibble_3.1.0                ggplot2_3.3.3              
+[11] tidyverse_1.3.0             IHW_1.16.0                 
+[13] proDA_1.2.0                 qvalue_2.20.0              
+[15] DESeq2_1.28.1               SummarizedExperiment_1.18.2
+[17] DelayedArray_0.14.1         matrixStats_0.58.0         
+[19] Biobase_2.48.0              GenomicRanges_1.40.0       
+[21] GenomeInfoDb_1.24.2         IRanges_2.22.2             
+[23] S4Vectors_0.26.1            BiocGenerics_0.34.0        
+[25] limma_3.44.3               
 
 loaded via a namespace (and not attached):
- [1] colorspace_1.4-1       ellipsis_0.3.1         rprojroot_1.3-2       
- [4] htmlTable_2.0.1        XVector_0.26.0         base64enc_0.1-3       
- [7] fs_1.4.2               rstudioapi_0.11        farver_2.0.3          
-[10] bit64_0.9-7            fansi_0.4.1            AnnotationDbi_1.48.0  
-[13] lubridate_1.7.9        xml2_1.3.2             splines_3.6.0         
-[16] geneplotter_1.64.0     knitr_1.29             Formula_1.2-3         
-[19] jsonlite_1.7.0         workflowr_1.6.2        broom_0.7.0           
-[22] annotate_1.64.0        cluster_2.1.0          dbplyr_1.4.4          
-[25] png_0.1-7              compiler_3.6.0         httr_1.4.1            
-[28] backports_1.1.8        assertthat_0.2.1       Matrix_1.2-18         
-[31] cli_2.0.2              later_1.1.0.1          acepack_1.4.1         
-[34] htmltools_0.5.0        tools_3.6.0            gtable_0.3.0          
-[37] glue_1.4.1             GenomeInfoDbData_1.2.2 Rcpp_1.0.5            
-[40] slam_0.1-47            cellranger_1.1.0       vctrs_0.3.1           
-[43] xfun_0.15              rvest_0.3.5            lifecycle_0.2.0       
-[46] XML_3.98-1.20          zlibbioc_1.32.0        scales_1.1.1          
-[49] hms_0.5.3              promises_1.1.1         RColorBrewer_1.1-2    
-[52] yaml_2.2.1             memoise_1.1.0          gridExtra_2.3         
-[55] rpart_4.1-15           latticeExtra_0.6-29    stringi_1.4.6         
-[58] RSQLite_2.2.0          genefilter_1.68.0      checkmate_2.0.0       
-[61] rlang_0.4.7            pkgconfig_2.0.3        bitops_1.0-6          
-[64] evaluate_0.14          lattice_0.20-41        lpsymphony_1.14.0     
-[67] labeling_0.3           htmlwidgets_1.5.1      bit_1.1-15.2          
-[70] tidyselect_1.1.0       magrittr_1.5           R6_2.4.1              
-[73] generics_0.0.2         Hmisc_4.4-0            DBI_1.1.0             
-[76] withr_2.2.0            pillar_1.4.6           haven_2.3.1           
-[79] foreign_0.8-71         survival_3.2-3         RCurl_1.98-1.2        
-[82] nnet_7.3-14            modelr_0.1.8           crayon_1.3.4          
-[85] fdrtool_1.2.15         rmarkdown_2.3          jpeg_0.1-8.1          
-[88] locfit_1.5-9.4         grid_3.6.0             readxl_1.3.1          
-[91] data.table_1.12.8      blob_1.2.1             git2r_0.27.1          
-[94] reprex_0.3.0           digest_0.6.25          xtable_1.8-4          
-[97] httpuv_1.5.4           munsell_0.5.0         </code></pre>
+ [1] colorspace_2.0-0       ellipsis_0.3.1         rprojroot_2.0.2       
+ [4] XVector_0.28.0         fs_1.5.0               rstudioapi_0.13       
+ [7] farver_2.1.0           bit64_4.0.5            AnnotationDbi_1.50.3  
+[10] fansi_0.4.2            lubridate_1.7.10       xml2_1.3.2            
+[13] codetools_0.2-18       splines_4.0.2          cachem_1.0.4          
+[16] geneplotter_1.66.0     knitr_1.31             jsonlite_1.7.2        
+[19] workflowr_1.6.2        broom_0.7.5            annotate_1.66.0       
+[22] dbplyr_2.1.0           compiler_4.0.2         httr_1.4.2            
+[25] backports_1.2.1        assertthat_0.2.1       Matrix_1.3-2          
+[28] fastmap_1.1.0          cli_2.3.1              later_1.1.0.1         
+[31] htmltools_0.5.1.1      tools_4.0.2            gtable_0.3.0          
+[34] glue_1.4.2             GenomeInfoDbData_1.2.3 reshape2_1.4.4        
+[37] Rcpp_1.0.6             slam_0.1-48            cellranger_1.1.0      
+[40] jquerylib_0.1.3        vctrs_0.3.6            xfun_0.21             
+[43] rvest_1.0.0            lifecycle_1.0.0        XML_3.99-0.5          
+[46] zlibbioc_1.34.0        scales_1.1.1           hms_1.0.0             
+[49] promises_1.2.0.1       RColorBrewer_1.1-2     yaml_2.2.1            
+[52] memoise_2.0.0          sass_0.3.1             stringi_1.5.3         
+[55] RSQLite_2.2.3          highr_0.8              genefilter_1.70.0     
+[58] BiocParallel_1.22.0    rlang_0.4.10           pkgconfig_2.0.3       
+[61] bitops_1.0-6           evaluate_0.14          lattice_0.20-41       
+[64] lpsymphony_1.16.0      labeling_0.4.2         cowplot_1.1.1         
+[67] bit_4.0.4              tidyselect_1.1.0       plyr_1.8.6            
+[70] magrittr_2.0.1         R6_2.5.0               generics_0.1.0        
+[73] DBI_1.1.1              pillar_1.5.1           haven_2.3.1           
+[76] withr_2.4.1            survival_3.2-7         RCurl_1.98-1.2        
+[79] modelr_0.1.8           crayon_1.4.1           fdrtool_1.2.16        
+[82] utf8_1.1.4             rmarkdown_2.7          locfit_1.5-9.4        
+[85] grid_4.0.2             readxl_1.3.1           blob_1.2.1            
+[88] git2r_0.28.0           reprex_1.0.0           digest_0.6.27         
+[91] xtable_1.8-4           extraDistr_1.9.1       httpuv_1.5.5          
+[94] munsell_0.5.0          beeswarm_0.3.1         vipor_0.4.5           
+[97] bslib_0.2.4           </code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -917,6 +1072,8 @@ footer is added to webpages before the MathJax javascript. -->
 </script>
 
 
+
+
 </div>
 </div>
 
@@ -926,7 +1083,7 @@ footer is added to webpages before the MathJax javascript. -->
 
 // add bootstrap table styles to pandoc tables
 function bootstrapStylePandocTables() {
-  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
 }
 $(document).ready(function () {
   bootstrapStylePandocTables();
@@ -944,7 +1101,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>

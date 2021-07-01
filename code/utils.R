@@ -1,6 +1,6 @@
 #Utility functions
 library(latex2exp)
-
+library(ggbeeswarm)
 #set the global ggplot theme
 theme_full <- theme_bw() + theme(axis.text = element_text(size=14),
                              axis.title = element_text(size=16),
@@ -23,6 +23,41 @@ theme_half <- theme_bw() + theme(axis.text = element_text(size=14),
 # Defien a color scheme, based on ggsci_NEJM panel, for the paper
 colList <- c("#BC3C29FF","#0072B5FF","#E18727FF","#20854EFF","#7876B1FF","#6F99ADFF","#FFDC91FF","#EE4C97FF")
 
+# format pathway names
+setMap <- read_tsv("../data/setToPathway.txt", col_types = "cc")
+
+# Change to mutational status to more readable ones
+formatStatus <- function(patBack) {
+  patTab <- mutate_all(patBack, as.character) %>%
+    pivot_longer(-Patient.ID) %>%
+    mutate(value = case_when(
+      str_detect(name, "IGHV|Methylation") ~ value,
+      str_detect(name, "gain|del|trisomy") & value %in% "1" ~ "yes",
+      str_detect(name, "gain|del|trisomy") & value %in% "0" ~ "no",
+      value %in% "1" ~ "Mut",
+      value %in% "0" ~ "WT"
+    )) %>%
+    pivot_wider(names_from = "name", values_from = "value")
+}
+
+# Prepare column annotations for heatmap
+genAnnoCol <- function(varList) {
+  annoCol <- lapply(varList, function(name) {
+    if (name == "onChr12") {
+      c("yes" = colList[1],"no" = "white")
+    } else if (str_detect(name, "IGHV")) {
+      c(M = colList[4], U = colList[3])
+    } else if (str_detect(name, "gain|del|trisomy")) {
+      c(yes = "black",no = "white")
+    } else {
+      c(Mut = "black",WT = "white")
+    }
+  })
+  names(annoCol) = varList
+  return(annoCol)
+}
+
+
 # Function for scale a data matrix
 mscale <- function(x, center = TRUE, scale = TRUE, censor = NULL, useMad = FALSE){
   if (scale & center) {
@@ -44,7 +79,7 @@ mscale <- function(x, center = TRUE, scale = TRUE, censor = NULL, useMad = FALSE
       x.scaled <- apply(x, 1, function(y) y/(sd(y)))
     }
   } else {
-    x.scale = x
+    x.scaled <- x
   }
 
   if (!is.null(censor)) {
@@ -69,8 +104,8 @@ plotCorScatter <- function(inputTab, x, y, x_lab = "X", y_lab = "Y", title = "",
   #prepare annotation values
   corRes <- cor.test(plotTab$x, plotTab$y)
   pval <- formatNum(corRes$p.value, digits = 1, format = "e")
-  Rval <- formatNum(corRes$estimate, digits = 1, format = "e")
-  R2val <- formatNum(corRes$estimate^2, digits = 1, format = "e")
+  Rval <- formatNum(corRes$estimate, digits = 2)
+  R2val <- formatNum(corRes$estimate^2, digits = 2)
   Nval <- nrow(plotTab)
   annoP <- bquote(italic("P")~"="~.(pval))
 
@@ -217,42 +252,7 @@ km <- function(response, time, endpoint, titlePlot = "KM plot", pval = NULL,
   }
 }
 
-#function for plot hazard ratio
-plotHazard <- function(survRes, title = "") {
-  sumTab <- summary(survRes)$coefficients
-  confTab <- summary(survRes)$conf.int
-  #correct feature name
-  nameOri <- rownames(sumTab)
-  nameMod <- substr(nameOri, 1, nchar(nameOri) -1)
-  plotTab <- tibble(feature = rownames(sumTab),
-                    nameMod = substr(nameOri, 1, nchar(nameOri) -1),
-                    HR = sumTab[,2],
-                    p = sumTab[,5],
-                    Upper = confTab[,4],
-                    Lower = confTab[,3]) %>%
-    mutate(feature = ifelse(nameMod %in% names(survRes$xlevels), nameMod, feature)) %>%
-    mutate(feature = str_replace(feature, "[.]","/")) %>%
-    mutate(feature = str_replace(feature, "[_]","-")) %>%
-    arrange(desc(abs(p))) %>% mutate(feature = factor(feature, levels = feature)) %>%
-    mutate(type = ifelse(HR >1 ,"up","down")) %>%
-    mutate(Upper = ifelse(Upper > 10, 10, Upper))
 
-  ggplot(plotTab, aes(x=feature, y = HR, color = type)) +
-    geom_hline(yintercept = 1, linetype = "dotted", color = "grey50") +
-    geom_point(position = position_dodge(width=0.8), size=3, color = "black") +
-    geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.3, size=1,color = "grey20") +
-    geom_text(position = position_nudge(x = 0.3),
-              aes(y = HR, label =  sprintf("italic(P)~'='~'%s'",
-                                           formatNum(p, digits = 1))),
-              color = "black", size =5, parse = TRUE) +
-    expand_limits(y=c(-0.5,0))+
-    scale_color_manual(values = c(up = colList[1], down = colList[2])) +
-    ggtitle(title) + scale_y_log10() +
-    ylab("Hazard ratio") +
-    coord_flip() +
-    theme_full +
-    theme(legend.position = "none", axis.title.y = element_blank())
-}
 
 #Function to run multivariate Cox model on test table
 runCox <- function(survTab, riskTab, time, endpoint) {
@@ -405,7 +405,7 @@ nFeature <- function(lassoRes) {
 
 runCamera <- function(exprMat, design, gmtFile, id = NULL,
                       contrast = ncol(design),  method = "camera", pCut = 0.05,
-                      ifFDR = FALSE, removePrefix = NULL, plotTitle = "", insideLegend = FALSE) {
+                      ifFDR = FALSE, removePrefix = NULL, plotTitle = "", insideLegend = FALSE, setMap = NULL) {
 
   #prepare indices
   if (is.null(id)) id <- rownames(exprMat)
@@ -427,6 +427,12 @@ runCamera <- function(exprMat, design, gmtFile, id = NULL,
 
   plotTab <- res %>% rownames_to_column("Name")
   if (!is.null(removePrefix)) plotTab <- mutate(plotTab, Name = str_remove(Name, removePrefix))
+
+  if(!is.null(setMap)) {
+    plotTab <- mutate(plotTab, newName = setMap[match(Name, setMap$setName),]$pathwayName) %>%
+      mutate(Name = ifelse(is.na(newName), Name, newName))
+  }
+
   plotTab <- plotTab %>%
     mutate(Direction= factor(Direction, levels =c("Down","Up"))) %>%
     arrange(desc(Direction),desc(PValue)) %>%
@@ -461,7 +467,7 @@ runCamera <- function(exprMat, design, gmtFile, id = NULL,
 
 #function to run fisher test for enrichment analysis
 runFisher <- function (genes, reference, gmtFile, adj = "BH", verbose = FALSE, barCol = NULL, setName = "",
-                       pCut = 0.05,ifFDR = FALSE, removePrefix = NULL, plotTitle = "", insideLegend = FALSE) {
+                       pCut = 0.05,ifFDR = FALSE, removePrefix = NULL, plotTitle = "", insideLegend = FALSE, setMap = NULL, topN = NULL) {
 
   genesets <- piano::loadGSC(gmtFile)$gsc
   tab = lapply(1:length(genesets), function(i) {
@@ -490,14 +496,7 @@ runFisher <- function (genes, reference, gmtFile, adj = "BH", verbose = FALSE, b
   padj = p.adjust(rtab[, 4], method = "BH")
   tab.out = data.frame(rtab, padj)
 
-  plotTab <- tab.out %>% dplyr::rename(Name = TermID, PValue = pval, FDR = padj)
-
-  if (!is.null(removePrefix)) plotTab <- mutate(plotTab, Name = str_remove(Name, removePrefix))
-
-  plotTab <- plotTab %>%
-    arrange(desc(PValue)) %>%
-    mutate(Name = sprintf("%s(%s)",Name,genes)) %>%
-    mutate(Name = factor(Name, levels = Name))
+  plotTab <- tab.out %>% dplyr::rename(Name = TermID, PValue = pval, FDR = padj) %>% arrange(PValue)
 
   if (ifFDR) {
     plotTab <- dplyr::filter(plotTab, FDR <= pCut)
@@ -505,30 +504,48 @@ runFisher <- function (genes, reference, gmtFile, adj = "BH", verbose = FALSE, b
     plotTab <- dplyr::filter(plotTab, PValue <= pCut)
   }
 
-  if (is.null(barCol)) barCol <- colList[1]
-
   if (nrow(plotTab) == 0) {
     print("No sets passed the criteria")
     return(list(enrichTab = tab.out, enrichPlot = NULL))
-  } else {
-    p <- ggplot(data = plotTab, aes(x = Name, y = -log10(PValue))) +
-      geom_bar(position = "dodge", stat = "identity", width = 0.5, fill = barCol) +
-      coord_flip() + xlab(setName) +
-      ylab(expression(-log[10]*'('*italic(P)~value*')')) + ggtitle(plotTitle) +
-      theme_full +
-      theme(axis.text = element_text(size= 12))
-    if (insideLegend) {
-      p <- p + theme(legend.position = c(0.8,0.1))
-    } else {
-      p <- p + theme(legend.position = "right")
-    }
-
-    return(list(enrichTab = tab.out, enrichPlot = p))
   }
+
+  if (!is.null(topN)) {
+    plotTab <- plotTab[1:min(nrow(plotTab),topN),]
+  }
+
+  if (!is.null(removePrefix)) plotTab <- mutate(plotTab, Name = str_remove(Name, removePrefix))
+  if(!is.null(setMap)) {
+    plotTab <- mutate(plotTab, newName = setMap[match(Name, setMap$setName),]$pathwayName) %>%
+      mutate(Name = ifelse(is.na(newName), Name, newName))
+  }
+
+  plotTab <- plotTab %>%
+    arrange(desc(PValue)) %>%
+    mutate(Name = sprintf("%s(%s)",Name,genes)) %>%
+    mutate(Name = factor(Name, levels = Name))
+
+
+
+  if (is.null(barCol)) barCol <- colList[1]
+
+
+  p <- ggplot(data = plotTab, aes(x = Name, y = -log10(PValue))) +
+    geom_bar(position = "dodge", stat = "identity", width = 0.5, fill = barCol) +
+    coord_flip() + xlab(setName) +
+    ylab(expression(-log[10]*'('*italic(P)~value*')')) + ggtitle(plotTitle) +
+    theme_full +
+    theme(axis.text = element_text(size= 12))
+  if (insideLegend) {
+    p <- p + theme(legend.position = c(0.8,0.1))
+  } else {
+    p <- p + theme(legend.position = "right")
+  }
+
+  return(list(enrichTab = tab.out, enrichPlot = p))
 }
 
 #function to plot heatmap for each gene set (using complex heatmap)
-plotSetHeatmap <- function(geneSigTab, setDir, setName, exprMat, colAnno, scale = TRUE, rowAnno = NULL, annoCol = NULL, highLight = NULL) {
+plotSetHeatmap <- function(geneSigTab, setDir, setName, exprMat, colAnno, scale = TRUE, rowAnno = NULL, annoCol = NULL, highLight = NULL, plotName =NULL, italicize=TRUE) {
   geneList <- loadGSC(setDir)[["gsc"]][[setName]]
   sigGene <- dplyr::filter(geneSigTab, name %in% geneList) %>%
     arrange(desc(logFC))
@@ -543,21 +560,28 @@ plotSetHeatmap <- function(geneSigTab, setDir, setName, exprMat, colAnno, scale 
     plotMat[plotMat <= -4] <- -4
   }
 
-  haCol <- ComplexHeatmap::HeatmapAnnotation(df = colAnno, col=annoCol, which = "column",annotation_name_gp = gpar(fontface = "bold"))
+  haCol <- ComplexHeatmap::HeatmapAnnotation(df = colAnno, col=annoCol, which = "column",
+                                             annotation_name_gp = gpar(fontface = "bold"))
   if (!is.null(rowAnno)) {
-    haRow <- ComplexHeatmap::HeatmapAnnotation(df = rowAnno[rownames(plotMat),,drop=FALSE], col=annoCol, which = "row", annotation_name_gp = gpar(fontface = "bold"))
+    haRow <- ComplexHeatmap::HeatmapAnnotation(df = rowAnno[rownames(plotMat),,drop=FALSE], col=annoCol, which = "row",
+                                               annotation_name_gp = gpar(fontface = "bold"))
   } else haRow <- NULL
 
   labelCol <- rep("black",nrow(plotMat))
   if (!is.null(highLight)) {
     labelCol[rownames(plotMat) %in% highLight] <-"red"
   }
+  if (italicize) {
+    labFont <- 3
+  } else labFont <- 1
+
+  plotName <- ifelse(is.null(plotName),setName,plotName)
 
   ComplexHeatmap::Heatmap(plotMat, col = colorRampPalette(c(colList[2],"white",colList[1]))(100),name = "z-score",
                           top_annotation = haCol, left_annotation = haRow, show_column_names = FALSE,
                           cluster_columns  = FALSE, cluster_rows = FALSE,
-                          row_names_gp = gpar(col = labelCol),
-                          column_title = setName, column_title_gp = gpar(cex= 1.5, fontface = "bold")
+                          row_names_gp = gpar(col = labelCol, fontface = labFont),
+                          column_title = plotName, column_title_gp = gpar(cex= 1.5, fontface = "bold")
   )
 }
 
@@ -666,7 +690,7 @@ runGSEA <- function(inputTab,gmtFile,GSAmethod="gsea",nPerm=1000){
 }
 
 plotEnrichmentBar <- function(resTab, pCut = 0.05, ifFDR = FALSE, setName = "", title="",
-                              removePrefix = NULL, insideLegend = FALSE) {
+                              removePrefix = NULL, insideLegend = FALSE, setMap = NULL) {
 
     plotTab <- resTab
 
@@ -691,6 +715,10 @@ plotEnrichmentBar <- function(resTab, pCut = 0.05, ifFDR = FALSE, setName = "", 
       }) %>% bind_rows()
 
       if (!is.null(removePrefix)) plotTab <- mutate(plotTab, Name = str_remove(Name, removePrefix))
+      if(!is.null(setMap)) {
+        plotTab <- mutate(plotTab, newName = setMap[match(Name, setMap$setName),]$pathwayName) %>%
+          mutate(Name = ifelse(is.na(newName), Name, newName))
+      }
 
       plotTab$Name <- sprintf("%s (%s)",plotTab$Name,plotTab$geneNum)
       plotTab <- plotTab[with(plotTab,order(Direction, p, decreasing=TRUE)),]
@@ -701,9 +729,9 @@ plotEnrichmentBar <- function(resTab, pCut = 0.05, ifFDR = FALSE, setName = "", 
         geom_bar(position="dodge",stat="identity", width = 0.5) +
         scale_fill_manual(values=c(Up = colList[1], Down = colList[2])) +
         coord_flip() + xlab(setName) +
-        ylab(expression(-log[10]*'('*p*')')) +
+        ylab(expression(-log[10]*'('*italic(P)*' value)')) +
         ggtitle(title) + theme_full + theme(plot.title = element_text(face = "bold", hjust =0.5),
-                                        axis.title = element_text(size=15))
+                                        axis.title = element_text(size=15), legend.background = element_rect(fill = NA))
 
       if (insideLegend) {
         p <- p + theme(legend.position = c(0.8,0.1))
@@ -720,11 +748,15 @@ plotEnrichmentBar <- function(resTab, pCut = 0.05, ifFDR = FALSE, setName = "", 
 
 plotVolcano <- function(pTab, fdrCut = 0.05, posCol = "red", negCol = "blue",
                         x_lab = "dm", plotTitle = "",ifLabel = FALSE, labelList=NULL,
-                        colLabel = NULL) {
+                        colLabel = NULL, yLim = NULL) {
   plotTab <- pTab %>% mutate(ifSig = ifelse(adj.P.Val > fdrCut, "n.s.",
                                             ifelse(logFC > 0, "up","down"))) %>%
-    mutate(ifSig = factor(ifSig, levels = c("up","down","n.s.")))
+    mutate(ifSig = factor(ifSig, levels = c("up","down","n.s."))) %>%
+    mutate(P.Value = ifelse(P.Value < 1e-16, 1e-16, P.Value))
   pCut <- -log10((filter(plotTab, ifSig != "n.s.") %>% arrange(desc(P.Value)))$P.Value[1])
+
+  if (is.null(yLim)) yLim <- max(-log10(plotTab$P.Value))
+
   g <- ggplot(plotTab, aes(x=logFC, y=-log10(P.Value))) +
     geom_point(shape = 21, aes(fill = ifSig),size=3) +
     geom_hline(yintercept = pCut, linetype = "dashed") +
@@ -732,9 +764,13 @@ plotVolcano <- function(pTab, fdrCut = 0.05, posCol = "red", negCol = "blue",
              size = 5, vjust = -1.2, hjust=-0.1) +
     scale_fill_manual(values = c(n.s. = "grey70",
                                  up = posCol, down = negCol),name = "") +
+    ylim(0,yLim) +
     theme_full +
     theme(legend.position = "bottom",
-          legend.text = element_text(size = 15)) +
+          legend.text = element_text(size = 15),
+          axis.text = element_text(size=20),
+          axis.title = element_text(size=20),
+          plot.title = element_text(size=20)) +
     ylab(expression(-log[10]*'('*italic(P)~value*')')) +
     xlab(x_lab) + ggtitle(plotTitle)
 
@@ -747,11 +783,11 @@ plotVolcano <- function(pTab, fdrCut = 0.05, posCol = "red", negCol = "blue",
 
     if (is.null(colLabel)) {
       g <- g + ggrepel::geom_label_repel(data = labelTab, aes(label = name),
-                                         size=8, force = 5, col = "red")
+                                         size=7, force = 5, col = "red")
     } else {
       g <- g+ggrepel::geom_label_repel(data = labelTab,
                                        aes_string(label = "name", col = colLabel),
-                                       size=8, force = 5) +
+                                       size=7, force = 5) +
         scale_color_manual(values = c(yes = "red",no = "black"))
     }
   }
@@ -767,11 +803,19 @@ plotBox <- function(plotTab, pValTabel = NULL, y_lab = "Protein expression") {
       arrange(status) %>% mutate(group = factor(group, levels = unique(group)))
 
     if (!is.null(pValTabel)) {
-      pval <- formatNum(filter(pValTabel, name == n)$P.Value, digits = 1, format="e")
-      titleText <- bquote(.(n)~" ("~italic("P")~"="~.(pval)~")")
+      pval <- filter(pValTabel, name == n)$P.Value
+      if (pval < 10^-12) {
+        pval <- 10^-12
+        pval <- formatNum(pval, digits = 1, format="e")
+        titleText <- bquote(italic(.(n))~" ("~italic("P")~"<"~.(pval)~")")
+      } else {
+        pval <- formatNum(pval, digits = 1, format="e")
+        titleText <- bquote(italic(.(n))~" ("~italic("P")~"="~.(pval)~")")
+      }
     } else {
-      titleText <- n
+      titleText <- bquote(italic(.(n)))
     }
+
     ggplot(eachTab, aes(x=group, y = count)) +
       geom_boxplot(width=0.3, aes(fill = group), outlier.shape = NA) +
       geom_beeswarm(col = "black", size =2.5,cex = 2, alpha=0.5) +
@@ -841,5 +885,34 @@ plotPep <- function(pepCLL, protName, type = "count", stratifier = NULL, mutStat
   }
 
   p
+}
+
+plotColList <- function() {
+  plotTab <- tibble(ID = as.factor(seq(length(colList))), y =1)
+  ggplot(plotTab, aes(x=ID, y=y, col = ID)) +
+    geom_point(size=5) +
+    scale_color_manual(values = colList)
+}
+
+
+shareLegend <- function(plotList, position = "left", ratio = c(1,0.1), ncol=2,
+                        rel_widths = NULL) {
+  #get legend
+  legend <- get_legend(plotList[[1]])
+
+  if (is.null(rel_widths)) rel_widths <- rep(1, length(plotList))
+
+  #main plot
+  plotList <- lapply(plotList, function(p) p+theme(legend.position = "none"))
+  mainPlot <- plot_grid(plotlist = plotList, ncol=ncol,
+                        rel_widths = rel_widths)
+
+  #plot the whole plot
+  if (position == "bottom") {
+    plot_grid(mainPlot, legend, ncol=1, rel_heights  = ratio)
+  } else if (position == "left") {
+    plot_grid(mainPlot, legend, ncol=2, rel_widths  = ratio)
+
+  }
 }
 

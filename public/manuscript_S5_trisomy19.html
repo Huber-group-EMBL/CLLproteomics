@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Junyan Lu" />
+
+<meta name="date" content="2021-02-16" />
+
+<title>Section 5: Proteomic signatures of trisomy19</title>
+
+<script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
+<script src="site_libs/jquery-3.5.1/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.3/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.17/datatables.js"></script>
+<link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-1.10.20/js/jquery.dataTables.min.js"></script>
+<link href="site_libs/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.1/js/crosstalk.min.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">CLL Proteome</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://git.embl.de/jlu/Proteomics">
+    <span class="fas fa-gitlab"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Section 5: Proteomic signatures of trisomy19</h1>
+<h4 class="author">Junyan Lu</h4>
+<h4 class="date">2021-02-16</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-05-06
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 5 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 2
+</p>
+<p>
+<strong>Knit directory:</strong> <code>CLLproteomics_publish_revision/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200227code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200227)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200227code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200227)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongdetected"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>Cache:</strong> detected </a>
+</p>
+</div>
+<div id="strongCachestrongdetected" class="panel-collapse collapse">
+<div class="panel-body">
+The following chunks had caches available:
+<ul>
+<li>
+unnamed-chunk-4
+</li>
+<li>
+unnamed-chunk-5
+</li>
+</ul>
+<p>To ensure reproducibility of the results, delete the cache directory <code>manuscript_S5_trisomy19_cache</code> and re-run the analysis. To have workflowr automatically delete the cache directory prior to building the file, set <code>delete_cache = TRUE</code> when running <code>wflow_build()</code> or <code>wflow_publish()</code>.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgitembldejluProteomicstree3fb50c57fa6132d3779996e8364369f6fb4aea70targetblank3fb50c5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://git.embl.de/jlu/Proteomics/tree/3fb50c57fa6132d3779996e8364369f6fb4aea70" target="_blank">3fb50c5</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgitembldejluProteomicstree3fb50c57fa6132d3779996e8364369f6fb4aea70targetblank3fb50c5a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://git.embl.de/jlu/Proteomics/tree/3fb50c57fa6132d3779996e8364369f6fb4aea70" target="_blank">3fb50c5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/.Rhistory
+    Ignored:    analysis/manuscript_S1_Overview_cache/
+    Ignored:    analysis/manuscript_S2_genomicAssociation_cache/
+    Ignored:    analysis/manuscript_S3_trisomy12_cache/
+    Ignored:    analysis/manuscript_S4_IGHV_cache/
+    Ignored:    analysis/manuscript_S5_trisomy19_cache/
+    Ignored:    code/.DS_Store
+    Ignored:    code/.Rhistory
+    Ignored:    data/.DS_Store
+    Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  analysis/.trisomy12_norm.pdf
+    Untracked:  analysis/IGHV_box.pdf
+    Untracked:  analysis/IGHV_enrich.pdf
+    Untracked:  analysis/IGHV_volcano.pdf
+    Untracked:  analysis/bufferComplexViolin.pdf
+    Untracked:  analysis/buffer_Tri12vsTri19.pdf
+    Untracked:  analysis/cohortComposition_all.pdf
+    Untracked:  analysis/heatmap_tri12_circle.pdf
+    Untracked:  analysis/manuscript_S1_Overview.Rmd
+    Untracked:  analysis/manuscript_S2_genomicAssociation.Rmd
+    Untracked:  analysis/manuscript_S3_trisomy12.Rmd
+    Untracked:  analysis/manuscript_S4_IGHV.Rmd
+    Untracked:  analysis/manuscript_S5_trisomy19.Rmd
+    Untracked:  analysis/manuscript_S6_del11q.Rmd
+    Untracked:  analysis/manuscript_S7_SF3B1.Rmd
+    Untracked:  analysis/manuscript_S8_drugResponse_Outcomes.Rmd
+    Untracked:  analysis/manuscript_S9_STAT2.Rmd
+    Untracked:  analysis/plot_PC1_PC2.pdf
+    Untracked:  analysis/timsTOF_validate.Rmd
+    Untracked:  analysis/tri12_transEnrich.pdf
+    Untracked:  analysis/tri19_dosage_effect.pdf
+    Untracked:  analysis/tri19_sum_buffer_number.pdf
+    Untracked:  analysis/trisomy12_chr_summary.pdf
+    Untracked:  code/utils.R
+    Untracked:  data/Annotation file March 2021.xlsx
+    Untracked:  data/CAS9results.xlsx
+    Untracked:  data/CNV_onChrom.RData
+    Untracked:  data/ComplexParticipantsPubMedIdentifiers_human.txt
+    Untracked:  data/Fig1A.png
+    Untracked:  data/IGLV321_SupplementalTables_R2.xlsx
+    Untracked:  data/MOFAout.RData
+    Untracked:  data/MOFAout_atLeast3.RData
+    Untracked:  data/STATexprPCR.xlsx
+    Untracked:  data/Western_blot_results_20210309_short.csv
+    Untracked:  data/Western_blot_results_separate_blots.xlsx
+    Untracked:  data/allComplexes.txt
+    Untracked:  data/ddsrna_enc.RData
+    Untracked:  data/exprCNV_enc.RData
+    Untracked:  data/geneAnno.RData
+    Untracked:  data/gmts/
+    Untracked:  data/ic50.RData
+    Untracked:  data/mofaIn.RData
+    Untracked:  data/mofaIn_atLeast3.RData
+    Untracked:  data/patMeta_enc.RData
+    Untracked:  data/pepCLL_lumos_enc.RData
+    Untracked:  data/protMOFA.RData
+    Untracked:  data/proteins_in_complexes
+    Untracked:  data/proteomic_LUMOS_2pep_enc.RData
+    Untracked:  data/proteomic_explore_enc.RData
+    Untracked:  data/proteomic_independent_all_enc.RData
+    Untracked:  data/proteomic_independent_enc.RData
+    Untracked:  data/proteomic_timsTOF_enc.RData
+    Untracked:  data/screenData_enc.RData
+    Untracked:  data/setToPathway.txt
+    Untracked:  data/survival_enc.RData
+    Untracked:  output/MSH6_splicing.svg
+    Untracked:  output/SUGP1_splicing.svg
+    Untracked:  output/deResList.RData
+    Untracked:  output/deResListBatch2.RData
+    Untracked:  output/deResListRNA.RData
+    Untracked:  output/deResListRNA_allGene.RData
+    Untracked:  output/deResList_WBC.RData
+    Untracked:  output/deResList_batch1.RData
+    Untracked:  output/deResList_batch3.RData
+    Untracked:  output/deResList_independent.RData
+    Untracked:  output/deResList_timsTOF.RData
+    Untracked:  output/dxdCLL.RData
+    Untracked:  output/dxdCLL2.RData
+    Untracked:  output/exprCNV.RData
+    Untracked:  output/geneAnno.RData
+    Untracked:  output/int_pairs.csv
+    Untracked:  output/lassoResults_CPS.RData
+    Untracked:  output/resOutcome_batch1.RData
+    Untracked:  output/resOutcome_batch13.RData
+    Untracked:  output/resOutcome_batch2.RData
+    Untracked:  output/resOutcome_batch3.RData
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/analysisSF3B1.Rmd
+    Deleted:    analysis/comparePlatforms.Rmd
+    Deleted:    analysis/compareProteomicsRNAseq.Rmd
+    Deleted:    analysis/correlateCLLPD.Rmd
+    Deleted:    analysis/correlateGenomic.Rmd
+    Deleted:    analysis/correlateGenomic_removePC.Rmd
+    Deleted:    analysis/correlateMIR.Rmd
+    Deleted:    analysis/correlateMethylationCluster.Rmd
+    Modified:   analysis/index.Rmd
+    Deleted:    analysis/predictOutcome.Rmd
+    Deleted:    analysis/processProteomics_LUMOS.Rmd
+    Deleted:    analysis/processProteomics_timsTOF.Rmd
+    Deleted:    analysis/qualityControl_LUMOS.Rmd
+    Deleted:    analysis/qualityControl_timsTOF.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="load-packages-and-datasets" class="section level1">
+<h1>Load packages and datasets</h1>
+</div>
+<div id="overview-of-differentially-expressed-proteins-related-to-trisomy19" class="section level1">
+<h1>Overview of differentially expressed proteins related to trisomy19</h1>
+<div id="a-table-of-associations-with-5-fdr" class="section level2">
+<h2>A table of associations with 5% FDR</h2>
+<pre class="r"><code>resList &lt;- filter(resList, Gene == &quot;trisomy19&quot;) %&gt;%
+  #mutate(adj.P.Val = adj.P.global) %&gt;% #use IHW corrected P-value
+  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
+resList %&gt;% filter(adj.P.Val &lt;= 0.05) %&gt;% 
+  select(name, Chr,logFC, P.Value, adj.P.Val) %&gt;%
+  mutate_if(is.numeric, formatC, digits=2) %&gt;%
+  DT::datatable()</code></pre>
+<div id="htmlwidget-16687c8f6ec6bc0aecc6" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-16687c8f6ec6bc0aecc6">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47"],["POU2F2","RANBP3","SGTA","TLE5","UPF1","PRKCSH","FLOT1","GPI","TRIM28","TUBA4A","CALR","TBC1D17","DPP9","POLR1G","NAPA","MAP4K1","MYDGF","WDR46","PRKAR1A","KHSRP","GOLGA3","ARHGEF1","DERA","UBE2M","PDCD5","DUSP3","THTPA","TIMM50","POLD3","TP53I3","NCLN","ALDH3A2","AKR1B1","TPM4","HIBADH","VAC14","IVD","UBE2Z","SIPA1L3","MAP1S","ACSF2","PEPD","ABHD14B","CLPP","IGHM","STXBP2","RPL17"],["19","19","19","19","19","19","6","19","19","2","19","19","19","19","19","19","19","6","17","19","12","19","12","19","19","17","14","19","11","2","19","17","7","19","7","16","15","17","19","19","17","19","3","19","14","19","18"],["1.3","0.54","0.51","0.74","0.41","0.63","-0.98","0.48","0.45","0.66","0.49","0.65","0.71","0.56","0.55","0.74","0.88","0.89","0.86","0.37","-0.75","0.59","-0.56","0.32","0.4","1.1","-1.2","0.44","0.66","-1.3","0.51"," -1","-0.93","0.7","-0.59","-0.53","-0.9","-0.55","1.2","0.5","-0.85","0.52","-0.65","0.57","-2.2","0.47","-0.44"],["3e-11","1.3e-07","1.5e-06","4.2e-06","5.7e-06","7.1e-06","1.2e-05","1.5e-05","1.6e-05","2.8e-05","3.1e-05","3.9e-05","4.5e-05","4.7e-05","5.9e-05","6.2e-05","6.6e-05","6.7e-05","7.8e-05","8.8e-05","0.00012","0.00013","0.00013","0.00016","0.00017","0.00019","0.00019","0.00021","0.00022","0.00024","0.00026","0.00027","0.00029","0.00031","0.00032","0.00033","0.00034","0.00037","0.00037","0.0004","0.00043","0.00045","0.00047","0.00057","0.00061","0.00064","0.00066"],["1e-07","0.00021","0.0016","0.0035","0.0038","0.0039","0.0057","0.0059","0.0059","0.0093","0.0093","0.011","0.011","0.011","0.012","0.012","0.012","0.012","0.014","0.015","0.019","0.019","0.019","0.022","0.023","0.024","0.024","0.024","0.025","0.026","0.027","0.028","0.029","0.03","0.03","0.03","0.03","0.031","0.031","0.033","0.035","0.036","0.036","0.043","0.045","0.046","0.047"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>name<\/th>\n      <th>Chr<\/th>\n      <th>logFC<\/th>\n      <th>P.Value<\/th>\n      <th>adj.P.Val<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="heatmap-of-differentially-expressed-proteins-5-fdr" class="section level2">
+<h2>Heatmap of differentially expressed proteins (5% FDR)</h2>
+<p>(Restricted to M-CLL with trisomy12)</p>
+<pre class="r"><code>protCLL$IGHV.status &lt;- patMeta[match(colnames(protCLL),patMeta$Patient.ID),]$IGHV.status
+protCLL$trisomy12 &lt;- patMeta[match(colnames(protCLL),patMeta$Patient.ID),]$trisomy12
+
+proList &lt;- filter(resList, !is.na(name), adj.P.Val &lt; 0.05) %&gt;% 
+  arrange(desc(t)) %&gt;%
+  distinct(name, .keep_all = TRUE) %&gt;% pull(id)
+plotMat &lt;- assays(protCLL)[[&quot;QRILC_combat&quot;]][proList, protCLL$IGHV.status %in% &quot;M&quot; &amp; protCLL$trisomy12 %in% 1]
+rownames(plotMat) &lt;- rowData(protCLL[proList,])$hgnc_symbol
+
+colAnno &lt;- filter(patMeta, Patient.ID %in% colnames(protCLL)) %&gt;%
+  select(Patient.ID, trisomy12, IGHV.status,trisomy19) %&gt;%
+  data.frame() %&gt;% column_to_rownames(&quot;Patient.ID&quot;)
+colAnno$trisomy12 &lt;- ifelse(colAnno$trisomy12 %in% 1, &quot;yes&quot;,&quot;no&quot;)
+colAnno$trisomy19 &lt;- ifelse(colAnno$trisomy19 %in% 1, &quot;yes&quot;,&quot;no&quot;)
+
+rowAnno &lt;- rowData(protCLL)[proList,c(&quot;chromosome_name&quot;,&quot;hgnc_symbol&quot;),drop=FALSE] %&gt;% 
+  data.frame(stringsAsFactors = FALSE) %&gt;% 
+  mutate(onChr19 = ifelse(chromosome_name == &quot;19&quot;,&quot;yes&quot;,&quot;no&quot;)) %&gt;%
+  select(hgnc_symbol, onChr19) %&gt;% data.frame() %&gt;% remove_rownames() %&gt;%
+  column_to_rownames(&quot;hgnc_symbol&quot;)
+
+plotMat &lt;- jyluMisc::mscale(plotMat, censor = 5)
+
+annoCol &lt;- list(trisomy12 = c(yes = &quot;black&quot;,no = &quot;grey80&quot;),
+                trisomy19 = c(yes = &quot;black&quot;,no = &quot;grey80&quot;),
+                IGHV.status = c(M = colList[3], U = colList[4]),
+                onChr19 = c(yes = colList[1],no = &quot;white&quot;))
+
+tri19Heatmap &lt;- pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = &quot;none&quot;,
+                   annotation_row = rowAnno,
+                   cluster_rows = FALSE,
+                   clustering_method = &quot;ward.D2&quot;,
+                   color = colorRampPalette(c(colList[2],&quot;white&quot;,colList[1]))(100),
+                   breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
+                   show_rownames = TRUE, show_colnames = FALSE,
+                   treeheight_row = 0, silent = TRUE)$gtable
+plot_grid(tri19Heatmap)</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/trisomy19_heatmap-1.png" width="576" style="display: block; margin: auto;" /></p>
+</div>
+<div id="summary-of-chromosome-distribution-5-fdr" class="section level2">
+<h2>Summary of chromosome distribution (5% FDR)</h2>
+<pre class="r"><code>plotTab &lt;- filter(resList, adj.P.Val &lt;=0.05) %&gt;% mutate(change = ifelse(logFC&gt;0,&quot;Up regulated&quot;,&quot;Down regulated&quot;),
+                              chromosome = ifelse(Chr %in% &quot;19&quot;,&quot;chr19&quot;,&quot;other&quot;)) %&gt;%
+  group_by(change, chromosome) %&gt;% summarise(n = length(id)) %&gt;%
+  bind_rows(tibble(change = &quot;Down regulated&quot;, chromosome = &quot;chr19&quot;,  n =0))
+
+sigNumPlot &lt;- ggplot(plotTab, aes(x=change, y=n, fill = chromosome)) + 
+  geom_bar(stat = &quot;identity&quot;, width = 0.8,
+           position = position_dodge2(width = 6),
+           col = &quot;black&quot;) +
+  geom_text(aes(label=n), 
+            position = position_dodge(width = 0.9),
+            size=4, hjust=-0.1)  +
+  scale_fill_manual(name = &quot;&quot;, labels = c(&quot;chr19&quot;,&quot;other&quot;), values = colList) +
+  coord_flip(ylim = c(0,35), expand = FALSE) + xlab(&quot;&quot;) + ylab(&quot;Number of significant associations (10% FDR)&quot;) + theme_half 
+sigNumPlot</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/trisomy19_chr_summary-1.png" width="672" style="display: block; margin: auto;" /> ## Enrichment analysis</p>
+<div id="barplot-of-enriched-pathways" class="section level3">
+<h3>Barplot of enriched pathways</h3>
+<pre class="r"><code>gmts = list(H= &quot;../data/gmts/h.all.v6.2.symbols.gmt&quot;,
+            KEGG = &quot;../data/gmts/c2.cp.kegg.v6.2.symbols.gmt&quot;,
+            GO = &quot;../data/gmts/c5.bp.v6.2.symbols.gmt&quot;)
+inputTab &lt;- resList %&gt;% filter(P.Value &lt; 0.05) %&gt;%
+  mutate(name = rowData(protCLL[id,])$hgnc_symbol) %&gt;% filter(!is.na(name)) %&gt;%
+  distinct(name, .keep_all = TRUE) %&gt;%
+  select(name, t) %&gt;% data.frame() %&gt;% column_to_rownames(&quot;name&quot;)
+enRes &lt;- list()
+enRes[[&quot;Proteins associated with trisomy19&quot;]] &lt;- runGSEA(inputTab, gmts$H, &quot;page&quot;)
+
+p &lt;- plotEnrichmentBar(enRes[[1]], pCut =0.05, ifFDR= TRUE, setName = &quot;HALLMARK gene set&quot;, 
+                       title = names(enRes)[1], removePrefix = &quot;HALLMARK_&quot;, insideLegend=TRUE)</code></pre>
+<pre><code>[1] &quot;No sets passed the criteria&quot;</code></pre>
+<pre class="r"><code>tri19Enrich &lt;- cowplot::plot_grid(p)
+tri19Enrich</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/unnamed-chunk-3-1.png" width="1152" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="volcano-plot" class="section level2">
+<h2>Volcano plot</h2>
+<pre class="r"><code>plotTab &lt;- resList %&gt;% mutate(onChr19 = ifelse(Chr %in% &quot;19&quot;,&quot;yes&quot;,&quot;no&quot;))
+#nameList &lt;- filter(resList, adj.P.Val &lt;=0.1)$name
+nameList &lt;- c(&quot;GPI&quot;,&quot;RANBP3&quot;,&quot;CALR&quot;,&quot;POU2F2&quot;)
+tri19Volcano &lt;- plotVolcano(plotTab, fdrCut =0.05, x_lab=&quot;log2FoldChange&quot;, posCol = colList[1], negCol = colList[2],
+            plotTitle = &quot;trisomy19&quot;, ifLabel = TRUE, labelList = nameList)
+tri19Volcano</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/trisomy19_volcano-1.png" width="1248" style="display: block; margin: auto;" /></p>
+</div>
+<div id="boxplot-plot-of-selected-proteins" class="section level2">
+<h2>Boxplot plot of selected proteins</h2>
+<p>(Restricted to M-CLL with trisomy19)</p>
+<pre class="r"><code>protSub &lt;- protCLL[, protCLL$IGHV.status %in% &quot;M&quot; &amp; protCLL$trisomy12 %in% 1]
+
+protTab &lt;- sumToTidy(protSub, rowID = &quot;uniprotID&quot;, colID = &quot;patID&quot;)
+resList.sig &lt;- filter(resList, adj.P.Val &lt; 0.1)
+#nameList &lt;- resList.sig$name[1:10]
+plotTab &lt;- protTab %&gt;% filter(hgnc_symbol %in% nameList) %&gt;%
+  mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19) %&gt;%
+  mutate(status = ifelse(trisomy19 %in% 1,&quot;trisomy19&quot;,&quot;other&quot;),
+         name = hgnc_symbol) %&gt;%
+  mutate(status=factor(status, levels = c(&quot;other&quot;,&quot;trisomy19&quot;)))
+pList &lt;- plotBox(plotTab, pValTabel = resList, y_lab = &quot;Protein expression&quot;)
+tri19Box&lt;-cowplot::plot_grid(plotlist= pList, ncol=2)
+tri19Box</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/trisomy19_selected_protein-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="buffering-of-gene-dosage-effect" class="section level1">
+<h1>Buffering of gene dosage effect</h1>
+<div id="visualizing-gene-dosage-effect-on-protein-and-rna-level" class="section level2">
+<h2>Visualizing gene dosage effect on protein and RNA level</h2>
+<p>Preprocessing protein and RNA expression data</p>
+<pre class="r"><code>dds$trisomy19 &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy19
+dds$IGHV &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$IGHV.status
+dds$trisomy12 &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy12
+
+ddsCLL &lt;- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, 
+              !is.na(dds$trisomy19) &amp; !is.na(dds$trisomy12) &amp; !is.na(dds$IGHV)]
+
+ddsSub &lt;- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, 
+              dds$IGHV %in% &quot;M&quot; &amp; dds$trisomy12 %in% 1 &amp; !is.na(dds$trisomy19)]
+
+ddsSub.vst &lt;- varianceStabilizingTransformation(ddsSub)</code></pre>
+<p>Differential expression</p>
+<pre class="r"><code>resTab &lt;- resListRNA %&gt;% filter(Gene == &quot;trisomy19&quot;)</code></pre>
+<pre class="r"><code>protExprTab &lt;- sumToTidy(protCLL) %&gt;%
+  filter(chromosome_name == &quot;19&quot;, IGHV.status == &quot;M&quot;, trisomy12 == 1) %&gt;%
+  mutate(id = ensembl_gene_id, patID = colID, expr = log2Norm_combat, type = &quot;Protein&quot;) %&gt;%
+  select(id, patID, expr, type)
+
+rnaExprTab &lt;- counts(dds[rownames(dds) %in% protExprTab$id,
+                            colnames(dds) %in% protExprTab$patID], normalized= TRUE) %&gt;%
+  as_tibble(rownames = &quot;id&quot;) %&gt;%
+  pivot_longer(-id, names_to = &quot;patID&quot;, values_to = &quot;count&quot;) %&gt;%
+  mutate(expr = log2(count)) %&gt;%
+  select(id, patID, expr) %&gt;% mutate(type = &quot;RNA&quot;) 
+
+comExprTab &lt;- bind_rows(rnaExprTab, protExprTab) %&gt;%
+  mutate(trisomy19 = patMeta[match(patID, patMeta$Patient.ID),]$trisomy19) %&gt;%
+  filter(!is.na(trisomy19)) %&gt;% mutate(cnv = ifelse(trisomy19 %in% 1, &quot;trisomy19&quot;,&quot;other&quot;))</code></pre>
+<div id="proteinsrnas-on-chr19-have-higher-expressions-in-trisomy19-samples-compared-to-other-samples" class="section level3">
+<h3>Proteins/RNAs on Chr19 have higher expressions in trisomy19 samples compared to other samples</h3>
+<pre class="r"><code>plotTab &lt;- comExprTab %&gt;%
+  group_by(id,type) %&gt;% mutate(zscore = (expr-mean(expr))/sd(expr)) %&gt;%
+  group_by(id, cnv, type) %&gt;% summarise(meanExpr = mean(zscore, na.rm=TRUE)) %&gt;%
+  ungroup()
+
+dosagePlot &lt;- ggplot(plotTab, aes(x=meanExpr, fill = cnv, col=cnv)) + 
+  geom_histogram(position = &quot;identity&quot;, alpha=0.5, bins=30) + facet_wrap(~type, scale = &quot;fixed&quot;) +
+  scale_fill_manual(values = c(other = &quot;grey80&quot;, trisomy19 = colList[2]), name = &quot;&quot;) +
+  scale_color_manual(values = c(other = &quot;grey80&quot;, trisomy19 = colList[2]), name = &quot;&quot;) +
+  xlim(-1,1.5) +
+  theme_full + xlab(&quot;Mean Z-score&quot;) +
+  theme(strip.text = element_text(size =20), legend.position = c(0.1,0.9),
+        legend.background = element_rect(fill = NA),
+        legend.text = element_text(size=15))
+
+dosagePlot</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/dosage_effect-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggsave(&quot;tri19_dosage_effect.pdf&quot;, height = 3, width = 8)</code></pre>
+</div>
+</div>
+<div id="analyzing-protein-buffering-effect" class="section level2">
+<h2>Analyzing protein buffering effect</h2>
+<div id="detect-buffered-and-non-buffered-proteins" class="section level3">
+<h3>Detect buffered and non-buffered proteins</h3>
+<p>Preprocessing protein and RNA data</p>
+<pre class="r"><code>#subset samples and genes
+overSampe &lt;- intersect(colnames(ddsCLL), colnames(protCLL))
+overGene &lt;- intersect(rownames(ddsCLL), rowData(protCLL)$ensembl_gene_id)
+ddsSub &lt;- ddsCLL[overGene, overSampe]
+protSub &lt;- protCLL[match(overGene, rowData(protCLL)$ensembl_gene_id),overSampe]
+rowData(ddsSub)$uniprotID &lt;- rownames(protSub)[match(rownames(ddsSub),rowData(protSub)$ensembl_gene_id)]
+
+#vst
+ddsSub.vst &lt;- varianceStabilizingTransformation(ddsSub)</code></pre>
+<p>Differential expression on RNA level</p>
+<pre class="r"><code>rnaRes &lt;- resListRNA %&gt;% filter(Gene == &quot;trisomy19&quot;) %&gt;%
+  mutate(Chr = rowData(dds[id,])$chromosome) %&gt;%
+  #filter(Chr == &quot;12&quot;) %&gt;%
+  #mutate(adj.P.Val = p.adjust(P.Value, method = &quot;BH&quot;)) %&gt;%
+  dplyr::rename(geneID = id, log2FC.rna = log2FC, 
+                pvalue.rna = P.Value, padj.rna = adj.P.Val, stat.rna= t) %&gt;%
+  select(geneID, log2FC.rna, pvalue.rna, padj.rna, stat.rna)</code></pre>
+<p>Protein abundance changes related to trisomy19</p>
+<pre class="r"><code>fdrCut &lt;- 0.05
+protRes &lt;- resList %&gt;% filter(Gene == &quot;trisomy19&quot;) %&gt;%
+    dplyr::rename(uniprotID = id, 
+                  pvalue = P.Value, padj = adj.P.global,
+                  chrom = Chr) %&gt;% 
+    mutate(geneID = rowData(protCLL[uniprotID,])$ensembl_gene_id) %&gt;%
+    select(name, uniprotID, geneID, chrom, log2FC, pvalue, padj, t) %&gt;%
+    dplyr::rename(stat =t) %&gt;%
+    arrange(pvalue) %&gt;% as_tibble() </code></pre>
+<p>Combine</p>
+<pre class="r"><code>allRes &lt;- left_join(protRes, rnaRes, by = &quot;geneID&quot;)</code></pre>
+<p><strong>Only chr19 genes that are up-regulated are considered.</strong></p>
+<pre class="r"><code>bufferTab &lt;- allRes %&gt;% filter(chrom %in% 19,stat.rna &gt; 0, stat&gt;0) %&gt;%
+  ungroup() %&gt;%
+  mutate(stat.prot.sqrt = sqrt(stat),
+         stat.prot.center = stat.prot.sqrt - mean(stat.prot.sqrt, na.rm = TRUE)) %&gt;%
+  mutate(score = -stat.prot.center*stat.rna,
+         diffFC = log2FC.rna - log2FC) %&gt;%
+  mutate(ifBuffer = case_when(
+    padj &lt; fdrCut &amp; padj.rna &lt; fdrCut &amp; stat &gt; 0 ~ &quot;non-Buffered&quot;,
+    padj &gt; fdrCut &amp; padj.rna &lt; fdrCut ~ &quot;Buffered&quot;,
+    padj &lt; fdrCut &amp; padj.rna &gt; fdrCut &amp; stat &gt; 0 ~ &quot;Enhanced&quot;,
+    TRUE ~ &quot;Undetermined&quot;
+  )) %&gt;%
+  arrange(desc(score))</code></pre>
+</div>
+<div id="table-of-buffering-status" class="section level3">
+<h3>Table of buffering status</h3>
+<pre class="r"><code>bufferTab %&gt;% mutate_if(is.numeric, formatC, digits=2) %&gt;%
+  select(name, pvalue, pvalue.rna, padj, padj.rna, ifBuffer) %&gt;%
+  DT::datatable()</code></pre>
+<div id="htmlwidget-e0d2c6e79f3c926924f1" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e0d2c6e79f3c926924f1">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124","125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141","142","143","144","145","146","147","148","149","150","151","152","153","154","155","156","157","158","159","160","161","162","163","164","165","166","167","168","169","170","171","172","173","174","175","176","177","178","179","180","181","182"],["TNPO2","EEF2","RNF126","CNOT3","GTF2F1","ALDH16A1","RBM42","RPS5","EIF3K","WDR18","NDUFA7","EPN1","AKAP8","STRN4","SNRPD2","PRPF31","DNMT1","NDUFB7","UQCRFS1","IRF3","AKT2","VRK3","LSM4","XAB2","EXOSC5","SYMPK","MOB3A","PNPLA6","SAFB","HNRNPL","RAB4B","COX6B1","SARS2","FBL","NFKBIB","NDUFA13","RUVBL2","SAFB2","POLR2E","GADD45GIP1","GMFG","KDM4B","MRI1","GNG7","PAF1","MBD3","TRAPPC5","SF3A2","MED16","DENND1C","USF2","BCAT2","JUND","TRIR","EPS15L1","ZC3H4","TIMM44","LONP1","CD22","ISOC2","AKAP8L","RFX1","ICAM3","FTL","RNASEH2A","BRD4","HNRNPM","PSMC4","GYS1","RAD23A","DDX39A","PRDX2","CDC37","TUBB4A","UBXN6","FARSA","SUGP1","NUCB1","RAB8A","FCER2","SNRPA","BAX","CNN2","TOMM40","DAZAP1","C19orf53","ECH1","AP3D1","UBA2","MBOAT7","PRKACA","NDUFS7","BLVRB","RDH13","BCKDHA","VASP","HDGFL2","SAE1","GSK3A","GET3","AP2S1","LSM14A","PLIN3","ARMC6","SUPT5H","XRCC1","CALR","ZNF787","HSPBP1","CCDC124","TBCB","PPP6R1","TECR","MYO9B","RASAL3","THOP1","PTBP1","FCHO1","ILF3","PNKP","ATP13A1","GRWD1","KRI1","PEPD","GCDH","SNRNP70","QTRT1","GPX4","VAV1","POLD1","PIN1","ACTN4","RAVER1","FKBP8","ZNF428","DNASE2","MAP1S","ARHGEF18","PKN1","AP2A1","TPM4","GMIP","NACC1","MAN2B1","SGTA","CARM1","PPP5C","UBE2M","CD79A","NAPA","STXBP2","CLPP","MYDGF","POLR1G","PRKD2","LMNB2","HNRNPUL1","SH3GL1","PIH1D1","PDCD5","SCAF1","GPI","MRPL4","GATAD2A","NIBAN3","PPP1R12C","ARHGEF1","SMARCA4","ARHGAP45","DNM2","NCLN","TBC1D17","TIMM50","TRIM28","SIPA1L3","UPF1","MAP4K1","KHSRP","PRKCSH","TLE5","DPP9","RANBP3"],["0.85","0.84","0.92","0.84","0.83","0.79","0.83","0.72","0.76","0.74","0.57","0.46","0.42","0.39","0.56","0.5","0.52","0.6","0.5","0.66","0.49","0.39","0.45","0.42","0.87","0.31","0.55","0.17","0.61","0.3","0.35","0.39","0.19","0.25","0.82","0.38","0.3","0.32","0.67","0.28","0.53","0.87","0.25","0.7","0.73","0.35","0.43","0.16","0.38","0.18","0.16","0.23","0.39","0.16","0.13","0.52","0.16","0.17","0.41","0.34","0.12","0.14","0.12","0.17","0.39","0.15","0.13","0.64","0.17","0.1","0.16","0.24","0.23","0.13","0.097","0.34","0.092","0.14","0.084","0.099","0.09","0.77","0.4","0.072","0.069","0.064","0.046","0.058","0.05","0.054","0.04","0.058","0.01","0.046","0.021","0.0094","0.032","0.0056","0.016","0.032","0.032","0.04","0.022","0.018","0.023","0.012","3.1e-05","0.013","0.021","0.013","0.022","0.023","0.014","0.038","0.0037","0.0099","0.015","0.025","0.013","0.035","0.0091","0.0079","0.0022","0.00045","0.0076","0.015","0.016","0.0092","0.0083","0.013","0.0027","0.0026","0.0035","0.002","0.0033","0.0019","0.0004","0.0056","0.0067","0.012","0.00031","0.0073","0.0059","0.009","1.5e-06","0.011","0.0031","0.00016","0.0043","5.9e-05","0.00064","0.00057","6.6e-05","4.7e-05","0.0054","0.0027","0.0008","0.002","0.0043","0.00017","0.0058","1.5e-05","0.0073","0.0015","0.0024","0.00094","0.00013","0.0019","0.00075","0.0025","0.00026","3.9e-05","0.00021","1.6e-05","0.00037","5.7e-06","6.2e-05","8.8e-05","7.1e-06","4.2e-06","4.5e-05","1.3e-07"],["4.4e-08","8.1e-05","0.00076","0.00062","0.0017","0.0014","0.011","0.0037","0.0069","0.019","0.0031","0.00046","0.00013","0.00015","0.0063","0.003","0.0046","0.022","0.0099","0.046","0.0093","0.0027","0.011","0.0088","0.22","0.0018","0.064","1.2e-08","0.11","0.0022","0.0094","0.019","2.1e-06","0.00052","0.28","0.029","0.009","0.015","0.26","0.02","0.2","0.45","0.016","0.36","0.4","0.1","0.18","0.00023","0.16","0.0032","0.0008","0.026","0.2","0.0015","3.5e-05","0.35","0.0035","0.0097","0.34","0.26","0.00011","0.0041","0.00045","0.038","0.41","0.022","0.0098","0.64","0.13","0.00036","0.17","0.43","0.39","0.066","0.0011","0.59","0.0011","0.24","2.8e-05","0.051","0.013","0.88","0.79","1.5e-05","0.15","0.0072","0.34","0.00013","0.043","0.0077","0.2","5.7e-06","0.59","0.0094","0.32","0.5","0.1","0.52","0.29","0.059","0.061","0.0035","0.12","0.1","0.051","0.1","0.6","0.063","0.014","0.066","0.0051","0.0033","0.034","2.9e-07","0.17","0.049","0.012","0.0003","0.01","2.2e-09","0.025","0.013","0.076","0.18","0.0093","0.00036","0.00016","0.0029","0.0036","0.00035","0.032","0.03","0.019","0.04","0.02","0.041","0.11","0.004","0.0017","4.4e-05","0.084","0.00061","0.0014","0.0002","0.26","3.9e-05","0.0046","0.071","0.0012","0.087","0.022","0.019","0.067","0.074","6.7e-05","0.0008","0.0074","0.0011","8e-05","0.026","1.3e-05","0.072","2e-06","0.00041","6.2e-05","0.00071","0.0048","1.8e-05","0.0003","2.9e-06","0.00044","0.0023","0.00019","0.0032","1.4e-05","0.00064","1.8e-05","2.5e-06","2.3e-05","2.8e-05","5e-09","1.7e-07"],["0.98","0.97","0.99","0.97","0.97","0.96","0.97","0.95","0.96","0.95","0.91","0.88","0.86","0.84","0.91","0.89","0.89","0.92","0.89","0.93","0.89","0.84","0.87","0.86","0.98","0.8","0.9","0.68","0.92","0.79","0.82","0.84","0.7","0.76","0.97","0.84","0.8","0.81","0.94","0.78","0.9","0.98","0.75","0.94","0.95","0.82","0.86","0.66","0.84","0.69","0.66","0.73","0.84","0.66","0.62","0.89","0.66","0.67","0.85","0.82","0.6","0.63","0.61","0.67","0.84","0.64","0.62","0.93","0.68","0.57","0.66","0.75","0.73","0.61","0.56","0.82","0.55","0.64","0.53","0.57","0.55","0.96","0.85","0.51","0.49","0.48","0.42","0.46","0.43","0.45","0.39","0.46","0.19","0.42","0.28","0.18","0.35","0.13","0.25","0.35","0.35","0.39","0.29","0.26","0.3","0.21","0.0029","0.22","0.28","0.22","0.29","0.3","0.23","0.38","0.1","0.19","0.24","0.3","0.22","0.37","0.18","0.16","0.073","0.023","0.16","0.24","0.24","0.18","0.17","0.22","0.082","0.081","0.099","0.068","0.093","0.066","0.021","0.13","0.15","0.21","0.017","0.16","0.14","0.18","0.00025","0.2","0.089","0.01","0.11","0.0048","0.03","0.027","0.0052","0.0041","0.13","0.083","0.035","0.068","0.11","0.011","0.14","0.0016","0.16","0.055","0.076","0.039","0.0089","0.066","0.033","0.078","0.015","0.0035","0.013","0.0017","0.019","0.00075","0.005","0.0065","0.00089","0.00058","0.0039","3.3e-05"],["2.7e-05","0.006","0.032","0.028","0.053","0.047","0.16","0.084","0.13","0.23","0.079","0.022","0.0089","0.01","0.12","0.078","0.099","0.25","0.16","0.36","0.16","0.073","0.17","0.15","0.71","0.056","0.43","1e-05","0.55","0.063","0.16","0.23","0.00045","0.025","0.75","0.28","0.15","0.2","0.74","0.24","0.69","0.85","0.21","0.8","0.83","0.54","0.67","0.014","0.64","0.079","0.033","0.27","0.69","0.049","0.0037","0.8","0.083","0.16","0.79","0.74","0.0082","0.091","0.022","0.32","0.83","0.25","0.16","0.92","0.58","0.019","0.65","0.85","0.82","0.43","0.041","0.91","0.041","0.72","0.0033","0.38","0.18","0.97","0.96","0.0022","0.62","0.13","0.79","0.0089","0.34","0.14","0.69","0.00096","0.91","0.16","0.77","0.88","0.54","0.88","0.76","0.41","0.42","0.083","0.56","0.54","0.38","0.54","0.91","0.42","0.18","0.43","0.11","0.079","0.31","9.7e-05","0.65","0.37","0.18","0.017","0.16","3.2e-06","0.26","0.18","0.46","0.67","0.16","0.019","0.01","0.078","0.084","0.019","0.29","0.28","0.23","0.33","0.24","0.33","0.54","0.09","0.053","0.0043","0.49","0.028","0.047","0.012","0.74","0.004","0.099","0.45","0.041","0.49","0.25","0.23","0.44","0.46","0.0052","0.033","0.14","0.041","0.006","0.27","0.002","0.45","0.00045","0.021","0.005","0.031","0.1","0.0024","0.017","0.00056","0.022","0.065","0.012","0.079","0.0021","0.028","0.0024","0.00051","0.0028","0.0033","5.5e-06","6.2e-05"],["Buffered","Buffered","Buffered","Buffered","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Buffered","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Buffered","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Buffered","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Enhanced","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Buffered","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Enhanced","Undetermined","Buffered","Buffered","Undetermined","Undetermined","Buffered","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Undetermined","Enhanced","Undetermined","Undetermined","Buffered","Enhanced","Buffered","Buffered","Buffered","Enhanced","Buffered","Undetermined","Enhanced","Buffered","Enhanced","Enhanced","Enhanced","Enhanced","Enhanced","Buffered","Buffered","Enhanced","Buffered","Buffered","Enhanced","Buffered","Enhanced","Buffered","Buffered","Buffered","non-Buffered","Enhanced","Buffered","non-Buffered","Buffered","non-Buffered","Enhanced","non-Buffered","Enhanced","non-Buffered","non-Buffered","non-Buffered","non-Buffered","non-Buffered","non-Buffered","non-Buffered","non-Buffered"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>name<\/th>\n      <th>pvalue<\/th>\n      <th>pvalue.rna<\/th>\n      <th>padj<\/th>\n      <th>padj.rna<\/th>\n      <th>ifBuffer<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="summary-plot" class="section level3">
+<h3>Summary plot</h3>
+<pre class="r"><code>sumTab &lt;- bufferTab %&gt;% group_by(ifBuffer) %&gt;%
+  summarise(n = length(name))
+
+bufferPlot &lt;- ggplot(sumTab, aes(x=ifBuffer, y = n)) + 
+  geom_bar(aes(fill = ifBuffer), stat=&quot;identity&quot;, width = 0.7) + 
+  geom_text(aes(label = paste0(n)),vjust=-0.5,col=&quot;black&quot;,size=5) +
+  scale_fill_manual(values =c(Buffered = colList[1],
+                              Enhanced = colList[4],
+                              `non-Buffered` = colList[2],
+                              Undetermined = &quot;grey50&quot;)) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5),
+                     legend.position = &quot;none&quot;) +
+  ylab(&quot;Number of proteins&quot;) + ylim(0,130) +xlab(&quot;&quot;)
+bufferPlot</code></pre>
+<p><img src="figure/manuscript_S5_trisomy19.Rmd/sum_buffer_number-1.png" width="384" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggsave(&quot;tri19_sum_buffer_number.pdf&quot;, width = 4, height = 4)</code></pre>
+</div>
+<div id="enrichment-of-buffer-and-non-buffered-proteins" class="section level3">
+<h3>Enrichment of buffer and non-buffered proteins</h3>
+<div id="non-buffered-prpteins" class="section level4">
+<h4>Non-buffered prpteins</h4>
+<div id="using-cancer-hallmark-genesets" class="section level5">
+<h5>Using cancer hallmark genesets</h5>
+<pre class="r"><code>protList &lt;- filter(bufferTab, ifBuffer == &quot;non-Buffered&quot;)$name
+refList &lt;- unique(protExprTab$symbol)
+enRes &lt;- runFisher(protList, refList, gmts$H, pCut =0.1, ifFDR = TRUE,removePrefix = &quot;HALLMARK_&quot;,
+                   plotTitle = &quot;Non-buffered proteins&quot;, insideLegend = TRUE,
+                   setName = &quot;HALLMARK gene set&quot;)</code></pre>
+<pre><code>[1] &quot;No sets passed the criteria&quot;</code></pre>
+<pre class="r"><code>bufferEnrich &lt;- enRes$enrichPlot + theme(plot.margin = margin(1,3,1,1, unit = &quot;cm&quot;))
+bufferEnrich</code></pre>
+<pre><code>NULL</code></pre>
+</div>
+<div id="using-go-biological-process-gene-sets" class="section level5">
+<h5>Using GO Biological Process gene sets</h5>
+<pre class="r"><code>protList &lt;- filter(bufferTab, ifBuffer == &quot;non-Buffered&quot;)$name
+refList &lt;- unique(protExprTab$symbol)
+enRes &lt;- runFisher(protList, refList, gmts$GO, pCut =0.1, ifFDR = TRUE,removePrefix = &quot;GO_&quot;,
+                   plotTitle = &quot;Non-buffered proteins&quot;, insideLegend = TRUE,
+                   setName = &quot;GO BP gene set&quot;)</code></pre>
+<pre><code>[1] &quot;No sets passed the criteria&quot;</code></pre>
+<pre class="r"><code>bufferEnrich &lt;- enRes$enrichPlot + theme(plot.margin = margin(1,3,1,1, unit = &quot;cm&quot;))
+bufferEnrich</code></pre>
+<pre><code>NULL</code></pre>
+</div>
+</div>
+<div id="buffered-proteins" class="section level4">
+<h4>Buffered proteins</h4>
+<pre class="r"><code>protList &lt;- filter(bufferTab, ifBuffer == &quot;Buffered&quot;)$name
+enRes &lt;- runFisher(protList, refList, gmts$H, pCut =0.1, ifFDR = TRUE)</code></pre>
+<pre><code>[1] &quot;No sets passed the criteria&quot;</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS  10.16
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+ [1] grid      parallel  stats4    stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] piano_2.4.0                 latex2exp_0.4.0            
+ [3] forcats_0.5.1               stringr_1.4.0              
+ [5] dplyr_1.0.5                 purrr_0.3.4                
+ [7] readr_1.4.0                 tidyr_1.1.3                
+ [9] tibble_3.1.0                tidyverse_1.3.0            
+[11] ggbeeswarm_0.6.0            ComplexHeatmap_2.4.3       
+[13] pheatmap_1.0.12             cowplot_1.1.1              
+[15] ggraph_2.0.5                ggplot2_3.3.3              
+[17] igraph_1.2.6                tidygraph_1.2.0            
+[19] DESeq2_1.28.1               SummarizedExperiment_1.18.2
+[21] DelayedArray_0.14.1         matrixStats_0.58.0         
+[23] Biobase_2.48.0              GenomicRanges_1.40.0       
+[25] GenomeInfoDb_1.24.2         IRanges_2.22.2             
+[27] S4Vectors_0.26.1            BiocGenerics_0.34.0        
+[29] limma_3.44.3               
+
+loaded via a namespace (and not attached):
+  [1] shinydashboard_0.7.1   utf8_1.1.4             tidyselect_1.1.0      
+  [4] RSQLite_2.2.3          AnnotationDbi_1.50.3   htmlwidgets_1.5.3     
+  [7] BiocParallel_1.22.0    maxstat_0.7-25         munsell_0.5.0         
+ [10] codetools_0.2-18       DT_0.17                withr_2.4.1           
+ [13] colorspace_2.0-0       highr_0.8              knitr_1.31            
+ [16] rstudioapi_0.13        ggsignif_0.6.1         labeling_0.4.2        
+ [19] git2r_0.28.0           slam_0.1-48            GenomeInfoDbData_1.2.3
+ [22] KMsurv_0.1-5           polyclip_1.10-0        bit64_4.0.5           
+ [25] farver_2.1.0           rprojroot_2.0.2        vctrs_0.3.6           
+ [28] generics_0.1.0         TH.data_1.0-10         xfun_0.21             
+ [31] sets_1.0-18            R6_2.5.0               clue_0.3-58           
+ [34] graphlayouts_0.7.1     locfit_1.5-9.4         fgsea_1.14.0          
+ [37] bitops_1.0-6           cachem_1.0.4           assertthat_0.2.1      
+ [40] promises_1.2.0.1       scales_1.1.1           multcomp_1.4-16       
+ [43] beeswarm_0.3.1         gtable_0.3.0           sandwich_3.0-0        
+ [46] workflowr_1.6.2        rlang_0.4.10           genefilter_1.70.0     
+ [49] GlobalOptions_0.1.2    splines_4.0.2          rstatix_0.7.0         
+ [52] broom_0.7.5            yaml_2.2.1             abind_1.4-5           
+ [55] modelr_0.1.8           crosstalk_1.1.1        backports_1.2.1       
+ [58] httpuv_1.5.5           tools_4.0.2            relations_0.6-9       
+ [61] ellipsis_0.3.1         gplots_3.1.1           jquerylib_0.1.3       
+ [64] RColorBrewer_1.1-2     Rcpp_1.0.6             visNetwork_2.0.9      
+ [67] zlibbioc_1.34.0        RCurl_1.98-1.2         ggpubr_0.4.0          
+ [70] GetoptLong_1.0.5       viridis_0.5.1          zoo_1.8-9             
+ [73] haven_2.3.1            ggrepel_0.9.1          cluster_2.1.1         
+ [76] exactRankTests_0.8-31  fs_1.5.0               magrittr_2.0.1        
+ [79] data.table_1.14.0      openxlsx_4.2.3         circlize_0.4.12       
+ [82] survminer_0.4.9        reprex_1.0.0           mvtnorm_1.1-1         
+ [85] shinyjs_2.0.0          hms_1.0.0              mime_0.10             
+ [88] evaluate_0.14          xtable_1.8-4           XML_3.99-0.5          
+ [91] rio_0.5.26             readxl_1.3.1           gridExtra_2.3         
+ [94] shape_1.4.5            compiler_4.0.2         KernSmooth_2.23-18    
+ [97] crayon_1.4.1           htmltools_0.5.1.1      later_1.1.0.1         
+[100] geneplotter_1.66.0     lubridate_1.7.10       DBI_1.1.1             
+[103] tweenr_1.0.1           dbplyr_2.1.0           MASS_7.3-53.1         
+[106] jyluMisc_0.1.5         Matrix_1.3-2           car_3.0-10            
+[109] cli_2.3.1              marray_1.66.0          km.ci_0.5-2           
+[112] pkgconfig_2.0.3        foreign_0.8-81         xml2_1.3.2            
+[115] annotate_1.66.0        vipor_0.4.5            bslib_0.2.4           
+[118] XVector_0.28.0         drc_3.0-1              rvest_1.0.0           
+[121] digest_0.6.27          fastmatch_1.1-0        rmarkdown_2.7         
+[124] cellranger_1.1.0       survMisc_0.5.5         curl_4.3              
+[127] shiny_1.6.0            gtools_3.8.2           rjson_0.2.20          
+[130] lifecycle_1.0.0        jsonlite_1.7.2         carData_3.0-4         
+[133] viridisLite_0.3.0      fansi_0.4.2            pillar_1.5.1          
+[136] lattice_0.20-41        fastmap_1.1.0          httr_1.4.2            
+[139] plotrix_3.8-1          survival_3.2-7         glue_1.4.2            
+[142] zip_2.1.1              png_0.1-7              bit_4.0.4             
+[145] ggforce_0.3.3          stringi_1.5.3          sass_0.3.1            
+[148] blob_1.2.1             caTools_1.18.1         memoise_2.0.0         </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

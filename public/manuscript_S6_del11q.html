@@ -13,14 +13,24 @@
 
 <meta name="date" content="2020-10-09" />
 
-<title>Section 6: Proteomic signature of del11q</title>
+<title>Section 6: Proteomic signature of del(11)(q22.3)</title>
 
-<script src="site_libs/jquery-1.12.4/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
+<script src="site_libs/jquery-3.5.1/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
@@ -28,14 +38,14 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<script src="site_libs/htmlwidgets-1.5.1/htmlwidgets.js"></script>
+<script src="site_libs/htmlwidgets-1.5.3/htmlwidgets.js"></script>
 <link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
-<script src="site_libs/datatables-binding-0.14/datatables.js"></script>
+<script src="site_libs/datatables-binding-0.17/datatables.js"></script>
 <link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.min.css" rel="stylesheet" />
 <link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.extra.css" rel="stylesheet" />
 <script src="site_libs/dt-core-1.10.20/js/jquery.dataTables.min.js"></script>
-<link href="site_libs/crosstalk-1.1.0.1/css/crosstalk.css" rel="stylesheet" />
-<script src="site_libs/crosstalk-1.1.0.1/js/crosstalk.min.js"></script>
+<link href="site_libs/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.1/js/crosstalk.min.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
@@ -47,12 +57,18 @@ div.section {
 }
 </style>
 
-<style type="text/css">code{white-space: pre;}</style>
+
+
 <style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -65,32 +81,7 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
 
 
 
@@ -100,10 +91,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -120,40 +107,13 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 51px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -181,7 +141,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -193,7 +153,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -204,10 +164,23 @@ $(document).ready(function () {
   var menuAnchor = $('a[href="' + href + '"]');
 
   // mark it active
-  menuAnchor.parent().addClass('active');
+  menuAnchor.tab('show');
 
   // if it's got a parent navbar menu mark it active as well
   menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -219,7 +192,6 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -348,13 +320,13 @@ div.tocify {
 
 
 <!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row-fluid">
-<div class="col-xs-12 col-sm-4 col-md-3">
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
 <div id="TOC" class="tocify">
 </div>
 </div>
 
-<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
 
 
 
@@ -378,7 +350,7 @@ div.tocify {
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://git.embl.de/jlu/Proteomics">
-    <span class="fa fa-gitlab"></span>
+    <span class="fas fa-gitlab"></span>
      
     Source code
   </a>
@@ -388,11 +360,11 @@ div.tocify {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
-<div class="btn-group pull-right">
-<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
-<ul class="dropdown-menu" style="min-width: 50px;">
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
 </ul>
@@ -400,7 +372,7 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Section 6: Proteomic signature of del11q</h1>
+<h1 class="title toc-ignore">Section 6: Proteomic signature of del(11)(q22.3)</h1>
 <h4 class="author">Junyan Lu</h4>
 <h4 class="date">2020-10-09</h4>
 
@@ -427,13 +399,13 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-10-09
+<strong>Last updated:</strong> 2021-05-06
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
-<strong>Knit directory:</strong> <code>CLLproteomics_publish/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+<strong>Knit directory:</strong> <code>CLLproteomics_publish_revision/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
 </p>
 <p>
 This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
@@ -451,7 +423,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you'll want to first commit it to the Git repo. If you're still working on the analysis, you can ignore this warning. When you're finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -463,7 +435,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it's best to always run the code in an empty environment.</p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
 </div>
 </div>
 </div>
@@ -540,9 +512,10 @@ Ignored files:
     Ignored:    analysis/.DS_Store
     Ignored:    analysis/.Rhistory
     Ignored:    analysis/manuscript_S1_Overview_cache/
+    Ignored:    analysis/manuscript_S2_genomicAssociation_cache/
     Ignored:    analysis/manuscript_S3_trisomy12_cache/
-    Ignored:    analysis/manuscript_S4_trisomy19_cache/
-    Ignored:    analysis/manuscript_S5_IGHV_cache/
+    Ignored:    analysis/manuscript_S4_IGHV_cache/
+    Ignored:    analysis/manuscript_S5_trisomy19_cache/
     Ignored:    code/.DS_Store
     Ignored:    code/.Rhistory
     Ignored:    data/.DS_Store
@@ -550,32 +523,81 @@ Ignored files:
 
 Untracked files:
     Untracked:  analysis/.trisomy12_norm.pdf
+    Untracked:  analysis/IGHV_box.pdf
+    Untracked:  analysis/IGHV_enrich.pdf
+    Untracked:  analysis/IGHV_volcano.pdf
+    Untracked:  analysis/bufferComplexViolin.pdf
+    Untracked:  analysis/buffer_Tri12vsTri19.pdf
+    Untracked:  analysis/cohortComposition_all.pdf
+    Untracked:  analysis/heatmap_tri12_circle.pdf
     Untracked:  analysis/manuscript_S1_Overview.Rmd
     Untracked:  analysis/manuscript_S2_genomicAssociation.Rmd
     Untracked:  analysis/manuscript_S3_trisomy12.Rmd
-    Untracked:  analysis/manuscript_S4_trisomy19.Rmd
-    Untracked:  analysis/manuscript_S5_IGHV.Rmd
+    Untracked:  analysis/manuscript_S4_IGHV.Rmd
+    Untracked:  analysis/manuscript_S5_trisomy19.Rmd
     Untracked:  analysis/manuscript_S6_del11q.Rmd
     Untracked:  analysis/manuscript_S7_SF3B1.Rmd
     Untracked:  analysis/manuscript_S8_drugResponse_Outcomes.Rmd
     Untracked:  analysis/manuscript_S9_STAT2.Rmd
+    Untracked:  analysis/plot_PC1_PC2.pdf
+    Untracked:  analysis/timsTOF_validate.Rmd
+    Untracked:  analysis/tri12_transEnrich.pdf
+    Untracked:  analysis/tri19_dosage_effect.pdf
+    Untracked:  analysis/tri19_sum_buffer_number.pdf
+    Untracked:  analysis/trisomy12_chr_summary.pdf
     Untracked:  code/utils.R
+    Untracked:  data/Annotation file March 2021.xlsx
+    Untracked:  data/CAS9results.xlsx
+    Untracked:  data/CNV_onChrom.RData
+    Untracked:  data/ComplexParticipantsPubMedIdentifiers_human.txt
     Untracked:  data/Fig1A.png
+    Untracked:  data/IGLV321_SupplementalTables_R2.xlsx
+    Untracked:  data/MOFAout.RData
+    Untracked:  data/MOFAout_atLeast3.RData
+    Untracked:  data/STATexprPCR.xlsx
+    Untracked:  data/Western_blot_results_20210309_short.csv
+    Untracked:  data/Western_blot_results_separate_blots.xlsx
+    Untracked:  data/allComplexes.txt
     Untracked:  data/ddsrna_enc.RData
     Untracked:  data/exprCNV_enc.RData
+    Untracked:  data/geneAnno.RData
     Untracked:  data/gmts/
+    Untracked:  data/ic50.RData
+    Untracked:  data/mofaIn.RData
+    Untracked:  data/mofaIn_atLeast3.RData
     Untracked:  data/patMeta_enc.RData
     Untracked:  data/pepCLL_lumos_enc.RData
-    Untracked:  data/pheno1000_enc.RData
+    Untracked:  data/protMOFA.RData
     Untracked:  data/proteins_in_complexes
-    Untracked:  data/proteomic_LUMOS_enc.RData
+    Untracked:  data/proteomic_LUMOS_2pep_enc.RData
+    Untracked:  data/proteomic_explore_enc.RData
+    Untracked:  data/proteomic_independent_all_enc.RData
+    Untracked:  data/proteomic_independent_enc.RData
     Untracked:  data/proteomic_timsTOF_enc.RData
+    Untracked:  data/screenData_enc.RData
+    Untracked:  data/setToPathway.txt
     Untracked:  data/survival_enc.RData
+    Untracked:  output/MSH6_splicing.svg
+    Untracked:  output/SUGP1_splicing.svg
     Untracked:  output/deResList.RData
+    Untracked:  output/deResListBatch2.RData
+    Untracked:  output/deResListRNA.RData
+    Untracked:  output/deResListRNA_allGene.RData
+    Untracked:  output/deResList_WBC.RData
+    Untracked:  output/deResList_batch1.RData
+    Untracked:  output/deResList_batch3.RData
+    Untracked:  output/deResList_independent.RData
     Untracked:  output/deResList_timsTOF.RData
     Untracked:  output/dxdCLL.RData
     Untracked:  output/dxdCLL2.RData
-    Untracked:  output/splicingResults.RData
+    Untracked:  output/exprCNV.RData
+    Untracked:  output/geneAnno.RData
+    Untracked:  output/int_pairs.csv
+    Untracked:  output/lassoResults_CPS.RData
+    Untracked:  output/resOutcome_batch1.RData
+    Untracked:  output/resOutcome_batch13.RData
+    Untracked:  output/resOutcome_batch2.RData
+    Untracked:  output/resOutcome_batch3.RData
 
 Unstaged changes:
     Modified:   analysis/_site.yml
@@ -596,7 +618,7 @@ Unstaged changes:
 
 </code></pre>
 <p>
-Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
 </p>
 </div>
 </div>
@@ -627,32 +649,38 @@ library(tidyverse)
 
 #load datasets
 load(&quot;../data/patMeta_enc.RData&quot;)
+load(&quot;../data/proteomic_explore_enc.RData&quot;)
 load(&quot;../data/ddsrna_enc.RData&quot;)
-load(&quot;../data/proteomic_LUMOS_enc.RData&quot;)
 load(&quot;../output/deResList.RData&quot;) #precalculated differential expression
+load(&quot;../output/deResListRNA.RData&quot;)
 
-protCLL &lt;- protCLL[rowData(protCLL)$uniqueMap,]
+#protCLL &lt;- protCLL[rowData(protCLL)$uniqueMap,]
 source(&quot;../code/utils.R&quot;)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c(&quot;png&quot;,&quot;pdf&quot;))</code></pre>
 </div>
 <div id="overview-of-differentially-expressed-proteins" class="section level1">
 <h1>Overview of differentially expressed proteins</h1>
-<div id="a-table-of-associations-with-10-fdr" class="section level2">
-<h2>A table of associations with 10% FDR</h2>
+<div id="a-table-of-associations-with-5-fdr" class="section level2">
+<h2>A table of associations with 5% FDR</h2>
 <pre class="r"><code>resList &lt;- filter(resList, Gene == &quot;del11q&quot;) %&gt;%
-  mutate(adj.P.Val = adj.P.IHW) %&gt;% #use IHW corrected P-value
+  #mutate(adj.P.Val = adj.P.global) %&gt;% #use IHW corrected P-value
   mutate(Chr = rowData(protCLL[id,])$chromosome_name)
-resList %&gt;% filter(adj.P.Val &lt;= 0.1) %&gt;% 
+resList %&gt;% filter(adj.P.Val &lt;= 0.05) %&gt;% 
   select(name, Chr,logFC, P.Value, adj.P.Val) %&gt;%
   mutate_if(is.numeric, formatC, digits=2) %&gt;%
   DT::datatable()</code></pre>
-<div id="htmlwidget-687c8f6ec6bc0aecc6e0" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-687c8f6ec6bc0aecc6e0">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19"],["CUL5","ACAT1","RNF7","DLAT","PDHA1","REXO2","PDHB","TNFAIP8L3","PDHX","ATM","GSTP1","AASDHPPT","SHMT2","SLC2A1","RAB30","GABARAPL2","KDM2A","ZC3H12D","DHODH"],["11","11","3","11","X","11","3","15","11","11","11","11","12","1","11","16","11","6","16"],["-1.1","-0.97","-0.83","-0.75","-0.61","-0.85","-0.61","-0.72","-0.59"," -1","0.85","-0.57","-0.59","-0.83","-0.85","-0.87","0.46","0.81","-0.72"],["1.5e-15","1.4e-11","1.5e-09","8e-08","1.4e-07","1.9e-07","4e-07","5.6e-07","1.9e-06","3.7e-06","5.4e-06","3.7e-05","7.1e-05","0.00011","0.00017","0.00046","0.00047","0.00051","0.00058"],["1.5e-09","6.7e-07","7.7e-06","0.00017","0.00025","0.00034","0.00054","0.00073","0.0046","0.0028","0.01","0.038","0.024","0.032","0.045","0.08","0.081","0.092","0.098"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>name<\/th>\n      <th>Chr<\/th>\n      <th>logFC<\/th>\n      <th>P.Value<\/th>\n      <th>adj.P.Val<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-16687c8f6ec6bc0aecc6" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-16687c8f6ec6bc0aecc6">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"],["CUL5","DLAT","ACAT1","PDHB","PDHA1","PDHX","RAD50","AASDHPPT","RNF7","RBM7","ATM","SHMT2","MRE11","MTSS1","RIPOR2","FAM76B","RAB30","NT5DC1","SRPRB","HMOX1","PARP14","PYCR3","PRKAR1A","KDM2A"],["11","11","11","3","X","11","5","11","3","11","11","12","11","8","6","11","11","6","3","22","3","8","17","11"],["-0.78","-0.84","-0.88","-0.58","-0.55","-0.56","-0.37","-0.57","-0.45","-0.54","-0.77","-0.47","-0.31","-0.93","-0.27","-0.42","-0.57","0.39","0.33","0.62","0.48","-0.44","0.42","0.28"],["9e-16","3.2e-15","6.4e-15","9.8e-13","2.7e-11","1.6e-10","5.2e-08","1.6e-07","2.8e-06","3.3e-06","4.7e-06","1.2e-05","1.5e-05","2.4e-05","6.4e-05","7.8e-05","8.1e-05","0.00017","0.00023","0.00027","0.00031","0.00032","0.00035","0.00036"],["3e-12","5.2e-12","7.1e-12","8.1e-10","1.8e-08","8.7e-08","2.5e-05","6.6e-05","0.001","0.0011","0.0014","0.0034","0.0039","0.0056","0.014","0.016","0.016","0.031","0.04","0.045","0.049","0.049","0.05","0.05"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>name<\/th>\n      <th>Chr<\/th>\n      <th>logFC<\/th>\n      <th>P.Value<\/th>\n      <th>adj.P.Val<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"order":[],"autoWidth":false,"orderClasses":false,"columnDefs":[{"orderable":false,"targets":0}]}},"evals":[],"jsHooks":[]}</script>
+<p>How many are on chr11</p>
+<pre class="r"><code>table(filter(resList,adj.P.Val &lt;= 0.05)$Chr)</code></pre>
+<pre><code>
+11 12 17 22  3  5  6  8  X 
+11  1  1  1  4  1  2  2  1 </code></pre>
 </div>
-<div id="heatmap-of-differentially-expressed-proteins-10-fdr" class="section level2">
-<h2>Heatmap of differentially expressed proteins (10% FDR)</h2>
-<pre class="r"><code>proList &lt;- filter(resList, !is.na(name), adj.P.Val &lt; 0.1) %&gt;% distinct(name, .keep_all = TRUE) %&gt;% pull(id)
-plotMat &lt;- assays(protCLL)[[&quot;QRILC&quot;]][proList,]
+<div id="heatmap-of-differentially-expressed-proteins-5-fdr" class="section level2">
+<h2>Heatmap of differentially expressed proteins (5% FDR)</h2>
+<pre class="r"><code>proList &lt;- filter(resList, !is.na(name), adj.P.Val &lt; 0.05) %&gt;% distinct(name, .keep_all = TRUE) %&gt;% pull(id)
+plotMat &lt;- assays(protCLL)[[&quot;QRILC_combat&quot;]][proList,]
 rownames(plotMat) &lt;- rowData(protCLL[proList,])$hgnc_symbol
 
 colAnno &lt;- filter(patMeta, Patient.ID %in% colnames(protCLL)) %&gt;%
@@ -661,7 +689,7 @@ colAnno &lt;- filter(patMeta, Patient.ID %in% colnames(protCLL)) %&gt;%
 colAnno$del11q &lt;- ifelse(colAnno$del11q %in% 1, &quot;yes&quot;,&quot;no&quot;)
 
 rowAnno &lt;- rowData(protCLL)[proList,c(&quot;chromosome_name&quot;,&quot;hgnc_symbol&quot;),drop=FALSE] %&gt;% 
-  data.frame(stringsAsFactors = FALSE) %&gt;%
+  data.frame(stringsAsFactors = FALSE) %&gt;% remove_rownames() %&gt;%
   mutate(onChr11 = ifelse(chromosome_name == &quot;11&quot;,&quot;yes&quot;,&quot;no&quot;)) %&gt;%
   select(hgnc_symbol, onChr11) %&gt;% data.frame() %&gt;% column_to_rownames(&quot;hgnc_symbol&quot;)
 
@@ -678,31 +706,31 @@ pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = &quot;none&quot;,
                    breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
                    show_rownames = TRUE, show_colnames = FALSE,
                    treeheight_row = 0)</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/unnamed-chunk-3-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p><img src="figure/manuscript_S6_del11q.Rmd/unnamed-chunk-4-1.png" width="960" style="display: block; margin: auto;" /></p>
 </div>
 <div id="volcano-plot" class="section level2">
 <h2>Volcano plot</h2>
 <pre class="r"><code>plotTab &lt;- resList  %&gt;% mutate(onChr11 = ifelse(Chr %in% &quot;11&quot;,&quot;yes&quot;,&quot;no&quot;))
 #nameList &lt;- filter(resList, adj.P.Val &lt; 0.1)$name
-nameList &lt;- c(&quot;CUL5&quot;,&quot;ATM&quot;,&quot;TNFAIP8L3&quot;)
-del11qVolcano &lt;- plotVolcano(plotTab, fdrCut =0.1, x_lab=&quot;log2FoldChange&quot;, posCol = colList[1], negCol = colList[2],
-            plotTitle = &quot;del11q&quot;, ifLabel = TRUE, labelList = nameList)
+nameList &lt;- c(&quot;ATM&quot;,&quot;CUL5&quot;)
+del11qVolcano &lt;- plotVolcano(plotTab, fdrCut =0.05, x_lab=&quot;log2FoldChange&quot;, posCol = colList[1], negCol = colList[2],
+            plotTitle = &quot;del(11)(q22.3)&quot;, ifLabel = TRUE, labelList = nameList)
 del11qVolcano</code></pre>
 <p><img src="figure/manuscript_S6_del11q.Rmd/del11q_volcano-1.png" width="1152" style="display: block; margin: auto;" /></p>
 </div>
 <div id="boxplot-plot-of-selected-genes" class="section level2">
 <h2>Boxplot plot of selected genes</h2>
-<pre class="r"><code>nameList &lt;- c(&quot;ATM&quot;,&quot;CUL5&quot;,&quot;TNFAIP8L3&quot;)
-protTab &lt;- sumToTidy(protCLL, rowID = &quot;uniprotID&quot;, colID = &quot;patID&quot;)
+<pre class="r"><code>protTab &lt;- sumToTidy(protCLL, rowID = &quot;uniprotID&quot;, colID = &quot;patID&quot;) %&gt;%
+  mutate(count = count_combat)
 plotTab &lt;- protTab %&gt;% filter(hgnc_symbol %in% nameList) %&gt;%
   mutate(del11q = patMeta[match(patID, patMeta$Patient.ID),]$del11q) %&gt;%
-  mutate(status = ifelse(del11q %in% 1,&quot;del11q&quot;,&quot;WT&quot;),
+  mutate(status = ifelse(del11q %in% 1,&quot;del(11)(q22.3)&quot;,&quot;other&quot;),
          name = hgnc_symbol) %&gt;%
-  mutate(status = factor(status, levels = c(&quot;WT&quot;,&quot;del11q&quot;)))
+  mutate(status = factor(status, levels = c(&quot;other&quot;,&quot;del(11)(q22.3)&quot;)))
 pList &lt;- plotBox(plotTab, pValTabel = resList, y_lab = &quot;Protein expression&quot;)
-del11qBox &lt;- cowplot::plot_grid(plotlist= pList, ncol=2)
+del11qBox &lt;- cowplot::plot_grid(plotlist= pList, ncol=1)
 del11qBox</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_selected_protein-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_selected_protein-1.png" width="480" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="compare-with-rna-sequencing-data" class="section level1">
@@ -710,20 +738,10 @@ del11qBox</code></pre>
 <div id="differentially-expressed-genes-related-to-trisomy11q" class="section level2">
 <h2>Differentially expressed genes related to trisomy11q</h2>
 <p>Prepare RNA sequencing data</p>
-<pre class="r"><code>dds$diag &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$diagnosis
-dds$trisomy12 &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy12
-dds$IGHV &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$IGHV.status
-dds$del11q &lt;- patMeta[match(dds$PatID, patMeta$Patient.ID),]$del11q
-
-
-ddsCLL &lt;- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, dds$diag %in% &quot;CLL&quot; &amp; !is.na(dds$IGHV) &amp; !is.na(dds$trisomy12) &amp; !is.na(dds$del11q)]
-ddsCLL.vst &lt;- varianceStabilizingTransformation(ddsCLL)</code></pre>
+<pre class="r"><code>ddsCLL &lt;- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id,]
+ddsCLL.vst &lt;- varianceStabilizingTransformation(dds)</code></pre>
 <p>Differential expression</p>
-<pre class="r"><code>design(ddsCLL) &lt;- ~ trisomy12 + IGHV + del11q
-deRes &lt;- DESeq(ddsCLL)
-resTab &lt;- results(deRes, contrast = c(&quot;del11q&quot;,&quot;1&quot;,&quot;0&quot;), tidy = TRUE) %&gt;%
-  mutate(name = rowData(ddsCLL[row,])$symbol) %&gt;%
-  dplyr::rename(P.Value = pvalue)</code></pre>
+<pre class="r"><code>resTab &lt;- filter(resListRNA, Gene == &quot;del11q&quot;)</code></pre>
 <div id="boxplot-of-selected-genes" class="section level3">
 <h3>Boxplot of selected genes</h3>
 <pre class="r"><code>plotTab &lt;- assay(ddsCLL.vst[match(nameList, rowData(ddsCLL.vst)$symbol),]) %&gt;%
@@ -731,18 +749,18 @@ resTab &lt;- results(deRes, contrast = c(&quot;del11q&quot;,&quot;1&quot;,&quot;
   mutate(name = rowData(ddsCLL.vst[id,])$symbol) %&gt;%
   gather(key = &quot;patID&quot;, value = &quot;count&quot;, -id, -name) %&gt;% 
   mutate(del11q = patMeta[match(patID, patMeta$Patient.ID),]$del11q) %&gt;%
-  mutate(status = ifelse(del11q %in% 1,&quot;del11q&quot;,&quot;WT&quot;))  %&gt;%
-  mutate(status = factor(status, levels = c(&quot;WT&quot;,&quot;del11q&quot;)))
+  mutate(status = ifelse(del11q %in% 1,&quot;del11q&quot;,&quot;other&quot;))  %&gt;%
+  mutate(status = factor(status, levels = c(&quot;other&quot;,&quot;del11q&quot;)))
 
 
 pList &lt;- plotBox(plotTab, pValTabel = resTab, y_lab = &quot;Normalized RNA expression&quot;)
-cowplot::plot_grid(plotlist= pList, ncol=2)</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_selected_RNA-1.png" width="960" style="display: block; margin: auto;" /></p>
+cowplot::plot_grid(plotlist= pList, ncol=1)</code></pre>
+<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_selected_RNA-1.png" width="480" style="display: block; margin: auto;" /></p>
 </div>
 <div id="correlations-between-rna-and-protein-expression" class="section level3">
 <h3>Correlations between RNA and protein expression</h3>
 <pre class="r"><code>rnaMat &lt;- assay(ddsCLL.vst)
-protMat &lt;- assays(protCLL)[[&quot;count&quot;]]
+protMat &lt;- assays(protCLL)[[&quot;count_combat&quot;]]
 rownames(protMat) &lt;- rowData(protCLL)$ensembl_gene_id
 overSample &lt;- intersect(colnames(rnaMat), colnames(protMat))
 rnaMat &lt;- rnaMat[,overSample]
@@ -758,42 +776,12 @@ plotList &lt;- lapply(nameList, function(n) {
                  y_lab =&quot;Protein expression&quot;, title = n,dotCol = colList[4], textCol = colList[1])
 })
 cowplot::plot_grid(plotlist = plotList, ncol =2)</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_protein_RNA_cor-1.png" width="864" style="display: block; margin: auto;" /></p>
+<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_protein_RNA_cor-1.png" width="768" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 </div>
-<div id="validation-on-peptide-level" class="section level1">
-<h1>Validation on peptide level</h1>
-<pre class="r"><code>load(&quot;../data/pepCLL_lumos_enc.RData&quot;)</code></pre>
-<pre class="r"><code>stratifier &lt;- &quot;del11q&quot;
-plotList &lt;- lapply(nameList, function(n) {
- mutStatus &lt;- as.character(patMeta[match(colnames(pepCLL), patMeta$Patient.ID),][[stratifier]])
- names(mutStatus) &lt;- colnames(pepCLL)
- plotPep(pepCLL, n, type = &quot;count&quot;, stratifier = stratifier, mutStatus = mutStatus)
-})
-cowplot::plot_grid(plotlist = plotList, ncol=1)</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/unnamed-chunk-7-1.png" width="1920" style="display: block; margin: auto;" /></p>
-</div>
-<div id="validation-using-timstof-data" class="section level1">
-<h1>Validation using timsTOF data</h1>
-<p>Load timsTOF data</p>
-<pre class="r"><code>load(&quot;../data/proteomic_timsTOF_enc.RData&quot;)
-load(&quot;../output/deResList_timsTOF.RData&quot;)</code></pre>
-<pre class="r"><code>resList &lt;- filter(resList, Gene == &quot;del11q&quot;) %&gt;%
-  mutate(adj.P.Val = adj.P.IHW) %&gt;% #use IHW corrected P-value
-  mutate(Chr = rowData(protCLL[id,])$chromosome_name)</code></pre>
-<pre class="r"><code>protTab &lt;- sumToTidy(protCLL, rowID = &quot;uniprotID&quot;, colID = &quot;patID&quot;)
-plotTab &lt;- protTab %&gt;% filter(hgnc_symbol %in% nameList) %&gt;%
-  mutate(del11q = patMeta[match(patID, patMeta$Patient.ID),]$del11q) %&gt;%
-  mutate(status = ifelse(del11q %in% 1,&quot;del11q&quot;,&quot;WT&quot;),
-         name = hgnc_symbol) %&gt;%
-    mutate(status = factor(status, levels = c(&quot;WT&quot;,&quot;del11q&quot;)))
-pList &lt;- plotBox(plotTab, pValTabel = resList)
-cowplot::plot_grid(plotlist= pList, ncol=2)</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/del11q_selected_protein_timsTOF-1.png" width="768" style="display: block; margin: auto;" /> <strong>Among the candidates, only ATM is detected by timsTOF</strong></p>
-</div>
-<div id="genome-coordinate-plot" class="section level1">
-<h1>Genome coordinate plot</h1>
+<div id="plot-rna-and-protein-expression-in-the-chromosome-regions-around-11q22.3" class="section level1">
+<h1>Plot RNA and protein expression in the chromosome regions around 11q22.3</h1>
 <pre class="r"><code>load(&quot;../data/exprCNV_enc.RData&quot;)</code></pre>
 <p>Normalize protein and RNA expression</p>
 <pre class="r"><code>normalized &lt;- TRUE
@@ -801,6 +789,7 @@ cowplot::plot_grid(plotlist= pList, ncol=2)</code></pre>
 if (normalized) {
   #for protein
   exprMat &lt;- select(allProtTab,patID, id,expr) %&gt;% 
+    distinct(patID, id, .keep_all = TRUE) %&gt;%
     spread(key = patID, value =expr) %&gt;% data.frame() %&gt;% 
     column_to_rownames(&quot;id&quot;) %&gt;% as.matrix()
   qm &lt;- jyluMisc::mscale(exprMat, useMad = F)
@@ -811,6 +800,7 @@ if (normalized) {
 
   #for RNA
   exprMat &lt;- select(allRnaTab,patID, id,expr) %&gt;% 
+    distinct(patID, id, .keep_all = TRUE) %&gt;%
     spread(key = patID, value =expr) %&gt;% data.frame() %&gt;% 
     column_to_rownames(&quot;id&quot;) %&gt;% as.matrix()
   qm &lt;- jyluMisc::mscale(exprMat, useMad = F)
@@ -955,17 +945,7 @@ g &lt;- plotExprCNV(patList,&quot;chr11&quot;,allBand, allLine.wes, allProtTab, 
                  plotTitle = &quot;chromosome 11: q21 to q24.1&quot;)
 geneCoordPlot &lt;- plot_grid(g$main, g$legend, ncol = 1, rel_heights = c(1,0.2))
 geneCoordPlot</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/unnamed-chunk-13-1.png" width="960" style="display: block; margin: auto;" /></p>
-</div>
-<div id="assemble-figure" class="section level1">
-<h1>Assemble figure</h1>
-<div id="supplementary-figure" class="section level2">
-<h2>Supplementary Figure</h2>
-<pre class="r"><code>plot_grid(plot_grid(del11qVolcano, del11qBox, ncol = 2, rel_widths = c(0.45,0.55),
-                    labels = c(&quot;A&quot;,&quot;B&quot;), label_size = 20),
-          geneCoordPlot,
-          ncol=1, rel_heights = c(0.55,0.45), labels = c(&quot;&quot;,&quot;C&quot;), label_size = 20)</code></pre>
-<p><img src="figure/manuscript_S6_del11q.Rmd/Figure5-1.png" width="1440" style="display: block; margin: auto;" /></p>
+<p><img src="figure/manuscript_S6_del11q.Rmd/unnamed-chunk-10-1.png" width="960" style="display: block; margin: auto;" /></p>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -974,13 +954,13 @@ geneCoordPlot</code></pre>
 </p>
 <div id="workflowr-sessioninfo" class="collapse">
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 3.6.0 (2019-04-26)
-Platform: x86_64-apple-darwin15.6.0 (64-bit)
-Running under: macOS  10.15.6
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS  10.16
 
 Matrix products: default
-BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
-LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
 
 locale:
 [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -990,74 +970,71 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] latex2exp_0.4.0             forcats_0.5.0              
- [3] stringr_1.4.0               dplyr_1.0.0                
- [5] purrr_0.3.4                 readr_1.3.1                
- [7] tidyr_1.1.0                 tibble_3.0.3               
- [9] tidyverse_1.3.0             cowplot_1.0.0              
+ [1] latex2exp_0.4.0             forcats_0.5.1              
+ [3] stringr_1.4.0               dplyr_1.0.5                
+ [5] purrr_0.3.4                 readr_1.4.0                
+ [7] tidyr_1.1.3                 tibble_3.1.0               
+ [9] tidyverse_1.3.0             cowplot_1.1.1              
 [11] ggbeeswarm_0.6.0            pheatmap_1.0.12            
-[13] ggraph_2.0.3                ggplot2_3.3.2              
-[15] igraph_1.2.5                tidygraph_1.2.0            
-[17] DESeq2_1.26.0               SummarizedExperiment_1.16.1
-[19] DelayedArray_0.12.3         BiocParallel_1.20.1        
-[21] matrixStats_0.56.0          Biobase_2.46.0             
-[23] GenomicRanges_1.38.0        GenomeInfoDb_1.22.1        
-[25] IRanges_2.20.2              S4Vectors_0.24.4           
-[27] BiocGenerics_0.32.0         limma_3.42.2               
+[13] ggraph_2.0.5                ggplot2_3.3.3              
+[15] igraph_1.2.6                tidygraph_1.2.0            
+[17] DESeq2_1.28.1               SummarizedExperiment_1.18.2
+[19] DelayedArray_0.14.1         matrixStats_0.58.0         
+[21] Biobase_2.48.0              GenomicRanges_1.40.0       
+[23] GenomeInfoDb_1.24.2         IRanges_2.22.2             
+[25] S4Vectors_0.26.1            BiocGenerics_0.34.0        
+[27] limma_3.44.3               
 
 loaded via a namespace (and not attached):
-  [1] shinydashboard_0.7.1   tidyselect_1.1.0       RSQLite_2.2.0         
-  [4] AnnotationDbi_1.48.0   htmlwidgets_1.5.1      grid_3.6.0            
-  [7] maxstat_0.7-25         munsell_0.5.0          codetools_0.2-16      
- [10] DT_0.14                withr_2.2.0            colorspace_1.4-1      
- [13] knitr_1.29             rstudioapi_0.11        ggsignif_0.6.0        
- [16] labeling_0.3           git2r_0.27.1           slam_0.1-47           
- [19] GenomeInfoDbData_1.2.2 KMsurv_0.1-5           polyclip_1.10-0       
- [22] bit64_0.9-7            farver_2.0.3           rprojroot_1.3-2       
- [25] vctrs_0.3.1            generics_0.0.2         TH.data_1.0-10        
- [28] xfun_0.15              sets_1.0-18            R6_2.4.1              
- [31] graphlayouts_0.7.0     locfit_1.5-9.4         bitops_1.0-6          
- [34] fgsea_1.12.0           assertthat_0.2.1       promises_1.1.1        
- [37] scales_1.1.1           multcomp_1.4-13        nnet_7.3-14           
- [40] beeswarm_0.2.3         gtable_0.3.0           sandwich_2.5-1        
- [43] workflowr_1.6.2        rlang_0.4.7            genefilter_1.68.0     
- [46] splines_3.6.0          rstatix_0.6.0          acepack_1.4.1         
- [49] broom_0.7.0            checkmate_2.0.0        yaml_2.2.1            
- [52] abind_1.4-5            modelr_0.1.8           crosstalk_1.1.0.1     
- [55] backports_1.1.8        httpuv_1.5.4           Hmisc_4.4-0           
- [58] tools_3.6.0            relations_0.6-9        ellipsis_0.3.1        
- [61] gplots_3.0.4           RColorBrewer_1.1-2     Rcpp_1.0.5            
- [64] visNetwork_2.0.9       base64enc_0.1-3        zlibbioc_1.32.0       
- [67] RCurl_1.98-1.2         ggpubr_0.4.0           rpart_4.1-15          
- [70] viridis_0.5.1          zoo_1.8-8              haven_2.3.1           
- [73] ggrepel_0.8.2          cluster_2.1.0          exactRankTests_0.8-31 
- [76] fs_1.4.2               magrittr_1.5           data.table_1.12.8     
- [79] openxlsx_4.1.5         survminer_0.4.7        reprex_0.3.0          
- [82] mvtnorm_1.1-1          hms_0.5.3              shinyjs_1.1           
- [85] mime_0.9               evaluate_0.14          xtable_1.8-4          
- [88] XML_3.98-1.20          rio_0.5.16             jpeg_0.1-8.1          
- [91] readxl_1.3.1           gridExtra_2.3          compiler_3.6.0        
- [94] KernSmooth_2.23-17     crayon_1.3.4           htmltools_0.5.0       
- [97] mgcv_1.8-31            later_1.1.0.1          Formula_1.2-3         
-[100] geneplotter_1.64.0     lubridate_1.7.9        DBI_1.1.0             
-[103] tweenr_1.0.1           dbplyr_1.4.4           MASS_7.3-51.6         
-[106] jyluMisc_0.1.5         Matrix_1.2-18          car_3.0-8             
-[109] cli_2.0.2              marray_1.64.0          gdata_2.18.0          
-[112] km.ci_0.5-2            pkgconfig_2.0.3        foreign_0.8-71        
-[115] piano_2.2.0            xml2_1.3.2             annotate_1.64.0       
-[118] vipor_0.4.5            XVector_0.26.0         drc_3.0-1             
-[121] rvest_0.3.5            digest_0.6.25          rmarkdown_2.3         
-[124] cellranger_1.1.0       fastmatch_1.1-0        survMisc_0.5.5        
-[127] htmlTable_2.0.1        curl_4.3               shiny_1.5.0           
-[130] gtools_3.8.2           nlme_3.1-148           lifecycle_0.2.0       
-[133] jsonlite_1.7.0         carData_3.0-4          viridisLite_0.3.0     
-[136] fansi_0.4.1            pillar_1.4.6           lattice_0.20-41       
-[139] fastmap_1.0.1          httr_1.4.1             plotrix_3.7-8         
-[142] survival_3.2-3         glue_1.4.1             zip_2.0.4             
-[145] png_0.1-7              bit_1.1-15.2           ggforce_0.3.2         
-[148] stringi_1.4.6          blob_1.2.1             latticeExtra_0.6-29   
-[151] caTools_1.18.0         memoise_1.1.0         </code></pre>
-</div>
+  [1] utf8_1.1.4             shinydashboard_0.7.1   tidyselect_1.1.0      
+  [4] RSQLite_2.2.3          AnnotationDbi_1.50.3   htmlwidgets_1.5.3     
+  [7] grid_4.0.2             BiocParallel_1.22.0    maxstat_0.7-25        
+ [10] munsell_0.5.0          codetools_0.2-18       DT_0.17               
+ [13] withr_2.4.1            colorspace_2.0-0       highr_0.8             
+ [16] knitr_1.31             rstudioapi_0.13        ggsignif_0.6.1        
+ [19] labeling_0.4.2         git2r_0.28.0           slam_0.1-48           
+ [22] GenomeInfoDbData_1.2.3 KMsurv_0.1-5           polyclip_1.10-0       
+ [25] bit64_4.0.5            farver_2.1.0           rprojroot_2.0.2       
+ [28] vctrs_0.3.6            generics_0.1.0         TH.data_1.0-10        
+ [31] xfun_0.21              sets_1.0-18            R6_2.5.0              
+ [34] graphlayouts_0.7.1     locfit_1.5-9.4         bitops_1.0-6          
+ [37] cachem_1.0.4           fgsea_1.14.0           assertthat_0.2.1      
+ [40] promises_1.2.0.1       scales_1.1.1           multcomp_1.4-16       
+ [43] beeswarm_0.3.1         gtable_0.3.0           sandwich_3.0-0        
+ [46] workflowr_1.6.2        rlang_0.4.10           genefilter_1.70.0     
+ [49] splines_4.0.2          rstatix_0.7.0          broom_0.7.5           
+ [52] yaml_2.2.1             abind_1.4-5            modelr_0.1.8          
+ [55] crosstalk_1.1.1        backports_1.2.1        httpuv_1.5.5          
+ [58] tools_4.0.2            relations_0.6-9        ellipsis_0.3.1        
+ [61] gplots_3.1.1           jquerylib_0.1.3        RColorBrewer_1.1-2    
+ [64] Rcpp_1.0.6             visNetwork_2.0.9       zlibbioc_1.34.0       
+ [67] RCurl_1.98-1.2         ggpubr_0.4.0           viridis_0.5.1         
+ [70] zoo_1.8-9              haven_2.3.1            ggrepel_0.9.1         
+ [73] cluster_2.1.1          exactRankTests_0.8-31  fs_1.5.0              
+ [76] magrittr_2.0.1         data.table_1.14.0      openxlsx_4.2.3        
+ [79] reprex_1.0.0           survminer_0.4.9        mvtnorm_1.1-1         
+ [82] hms_1.0.0              shinyjs_2.0.0          mime_0.10             
+ [85] evaluate_0.14          xtable_1.8-4           XML_3.99-0.5          
+ [88] rio_0.5.26             readxl_1.3.1           gridExtra_2.3         
+ [91] compiler_4.0.2         KernSmooth_2.23-18     crayon_1.4.1          
+ [94] htmltools_0.5.1.1      mgcv_1.8-34            later_1.1.0.1         
+ [97] geneplotter_1.66.0     lubridate_1.7.10       DBI_1.1.1             
+[100] tweenr_1.0.1           dbplyr_2.1.0           MASS_7.3-53.1         
+[103] jyluMisc_0.1.5         Matrix_1.3-2           car_3.0-10            
+[106] cli_2.3.1              marray_1.66.0          km.ci_0.5-2           
+[109] pkgconfig_2.0.3        foreign_0.8-81         piano_2.4.0           
+[112] xml2_1.3.2             annotate_1.66.0        vipor_0.4.5           
+[115] bslib_0.2.4            XVector_0.28.0         drc_3.0-1             
+[118] rvest_1.0.0            digest_0.6.27          rmarkdown_2.7         
+[121] cellranger_1.1.0       fastmatch_1.1-0        survMisc_0.5.5        
+[124] curl_4.3               shiny_1.6.0            gtools_3.8.2          
+[127] nlme_3.1-152           lifecycle_1.0.0        jsonlite_1.7.2        
+[130] carData_3.0-4          viridisLite_0.3.0      fansi_0.4.2           
+[133] pillar_1.5.1           lattice_0.20-41        fastmap_1.1.0         
+[136] httr_1.4.2             plotrix_3.8-1          survival_3.2-7        
+[139] glue_1.4.2             zip_2.1.1              bit_4.0.4             
+[142] ggforce_0.3.3          stringi_1.5.3          sass_0.3.1            
+[145] blob_1.2.1             caTools_1.18.1         memoise_2.0.0         </code></pre>
 </div>
 </div>
 
@@ -1075,6 +1052,8 @@ footer is added to webpages before the MathJax javascript. -->
 </script>
 
 
+
+
 </div>
 </div>
 
@@ -1084,7 +1063,7 @@ footer is added to webpages before the MathJax javascript. -->
 
 // add bootstrap table styles to pandoc tables
 function bootstrapStylePandocTables() {
-  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
 }
 $(document).ready(function () {
   bootstrapStylePandocTables();
@@ -1102,7 +1081,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>

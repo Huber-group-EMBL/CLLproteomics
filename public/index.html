@@ -11,14 +11,24 @@
 
 
 
-<title>The Proteome Landscape of Chronic Lymphocytic Leukemia (CLL)</title>
+<title>The Protein Landscape of Chronic Lymphocytic Leukemia (CLL)</title>
 
+<script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
@@ -34,12 +44,18 @@ div.section {
 }
 </style>
 
-<style type="text/css">code{white-space: pre;}</style>
+
+
 <style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -52,32 +68,7 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
 
 
 
@@ -87,10 +78,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -107,40 +94,13 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 51px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -168,7 +128,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -180,7 +140,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -191,10 +151,23 @@ $(document).ready(function () {
   var menuAnchor = $('a[href="' + href + '"]');
 
   // mark it active
-  menuAnchor.parent().addClass('active');
+  menuAnchor.tab('show');
 
   // if it's got a parent navbar menu mark it active as well
   menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -206,7 +179,6 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -292,7 +264,7 @@ $(document).ready(function () {
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://git.embl.de/jlu/Proteomics">
-    <span class="fa fa-gitlab"></span>
+    <span class="fas fa-gitlab"></span>
      
     Source code
   </a>
@@ -302,11 +274,11 @@ $(document).ready(function () {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
-<div class="btn-group pull-right">
-<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
-<ul class="dropdown-menu" style="min-width: 50px;">
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
 </ul>
@@ -314,7 +286,7 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">The Proteome Landscape of Chronic Lymphocytic Leukemia (CLL)</h1>
+<h1 class="title toc-ignore">The Protein Landscape of Chronic Lymphocytic Leukemia (CLL)</h1>
 
 </div>
 
@@ -339,13 +311,13 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-10-09
+<strong>Last updated:</strong> 2021-05-10
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 1 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
-<strong>Knit directory:</strong> <code>CLLproteomics_publish/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+<strong>Knit directory:</strong> <code>CLLproteomics_publish_revision/analysis/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
 </p>
 <p>
 This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
@@ -363,7 +335,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you'll want to first commit it to the Git repo. If you're still working on the analysis, you can ignore this warning. When you're finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -408,21 +380,41 @@ Untracked files:
     Untracked:  analysis/manuscript_S8_drugResponse_Outcomes.Rmd
     Untracked:  analysis/manuscript_S9_STAT2.Rmd
     Untracked:  code/utils.R
+    Untracked:  data/CAS9results.xlsx
+    Untracked:  data/ComplexParticipantsPubMedIdentifiers_human.txt
+    Untracked:  data/STATexprPCR.xlsx
+    Untracked:  data/Western_blot_results_20210309_short.csv
+    Untracked:  data/Western_blot_results_separate_blots.xlsx
+    Untracked:  data/allComplexes.txt
     Untracked:  data/ddsrna_enc.RData
-    Untracked:  data/exprCNV_enc.RData
+    Untracked:  data/geneAnno.RData
     Untracked:  data/gmts/
+    Untracked:  data/ic50.RData
     Untracked:  data/patMeta_enc.RData
-    Untracked:  data/pepCLL_lumos_enc.RData
-    Untracked:  data/pheno1000_enc.RData
     Untracked:  data/proteins_in_complexes
-    Untracked:  data/proteomic_LUMOS_enc.RData
+    Untracked:  data/proteomic_explore_enc.RData
+    Untracked:  data/proteomic_independent_all_enc.RData
+    Untracked:  data/proteomic_independent_enc.RData
     Untracked:  data/proteomic_timsTOF_enc.RData
+    Untracked:  data/screenData_enc.RData
+    Untracked:  data/setToPathway.txt
     Untracked:  data/survival_enc.RData
+    Untracked:  output/MSH6_splicing.svg
+    Untracked:  output/SUGP1_splicing.svg
     Untracked:  output/deResList.RData
+    Untracked:  output/deResListRNA.RData
+    Untracked:  output/deResList_WBC.RData
+    Untracked:  output/deResList_batch1.RData
+    Untracked:  output/deResList_batch3.RData
+    Untracked:  output/deResList_independent.RData
     Untracked:  output/deResList_timsTOF.RData
-    Untracked:  output/dxdCLL.RData
     Untracked:  output/dxdCLL2.RData
-    Untracked:  output/splicingResults.RData
+    Untracked:  output/geneAnno.RData
+    Untracked:  output/int_pairs.csv
+    Untracked:  output/resOutcome_batch1.RData
+    Untracked:  output/resOutcome_batch13.RData
+    Untracked:  output/resOutcome_batch2.RData
+    Untracked:  output/resOutcome_batch3.RData
 
 Unstaged changes:
     Modified:   analysis/_site.yml
@@ -443,7 +435,7 @@ Unstaged changes:
 
 </code></pre>
 <p>
-Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
 </p>
 </div>
 </div>
@@ -454,7 +446,7 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in th
 <div id="versions" class="tab-pane fade">
 
 <p>
-These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML (<code>public/index.html</code>) files. If you've configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML (<code>public/index.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
 </p>
 <div class="table-responsive">
 <table class="table table-condensed table-hover">
@@ -628,7 +620,7 @@ Junyan Lu
 2020-02-27
 </td>
 <td>
-wflow_publish(list.files(&quot;./&quot;, pattern = &quot;Rmd&quot;))
+wflow_publish(list.files(“./”, pattern = “Rmd”))
 </td>
 </tr>
 <tr>
@@ -689,30 +681,37 @@ Start workflowr project.
 </div>
 </div>
 </div>
-<p><font size="4">This is the workflow that generates the data analysis results and figures presented in the manuscript &quot;The Proteome Landscape of Chronic Lymphocytic Leukemia (CLL)&quot; by Meier-Abt and Lu et al. Users can also use the associated source code to reproduce all results and figures in the manuscript.</font></p>
+<p><font size="4">This is the workflow that generates the data analysis results and figures presented in the manuscript “The Protein Landscape of Chronic Lymphocytic Leukemia (CLL)” by Meier-Abt and Lu et al. Users can also use the associated source code to reproduce all results and figures in the manuscript.</font></p>
 <div id="section-1-overview-of-cll-proteomic-dataset" class="section level3">
 <h3><a href="./manuscript_S1_Overview.html">Section 1: Overview of CLL proteomic dataset</a></h3>
+<p>In this part, we will explore the overall structures of our CLL proteomic dataset, by correlating protein expression with RNA expression and by unsupervised clustering, including principal component analysis (PCA) and hierarchical clustering.</p>
 </div>
 <div id="section-2-identifying-proteins-associated-disease-drivers-in-cll" class="section level3">
 <h3><a href="./manuscript_S2_genomicAssociation.html">Section 2: Identifying proteins associated disease drivers in CLL</a></h3>
+<p>In this part, we will identify proteins whose expression levels are associated with certain genotypes.</p>
 </div>
 <div id="section-3-proteomic-signatures-of-trisomy12" class="section level3">
 <h3><a href="./manuscript_S3_trisomy12.html">Section 3: Proteomic signatures of trisomy12</a></h3>
+<p>In this part, we will explore the proteomic signatures of trisomy12. We will identify differentially expressed proteins in samples with trisomy12 compared to samples without trisomy12, and use gene set enrichment analysis to characterize the potential pathway activity changes related to trisomy12. We will particularly focus on the gene dosage effect and protein level buffering in trisomy12 samples. We will also use protein complex network to illustrate the potential mechanism for the connection between the cis- and trans-effect of trisomy12.</p>
 </div>
-<div id="section-4-proteomic-signatures-of-trisomy19" class="section level3">
-<h3><a href="./manuscript_S4_trisomy19.html">Section 4: Proteomic signatures of trisomy19</a></h3>
+<div id="section-4-proteomic-signature-of-ighv-mutation-status" class="section level3">
+<h3><a href="./manuscript_S4_IGHV.html">Section 4: Proteomic signature of IGHV mutation status</a></h3>
+<p>In this part, we will explore the proteomic signatures related to IGHV mutational status in CLL. Differential protein expression analysis and gene set enrichment analysis will be performed.</p>
 </div>
-<div id="section-5-proteomic-signature-of-ighv-status" class="section level3">
-<h3><a href="./manuscript_S5_IGHV.html">Section 5: Proteomic signature of IGHV status</a></h3>
+<div id="section-5-7" class="section level3">
+<h3>Section 5-7:</h3>
+<p>In Section 5 to 7, we will characterize proteomic signatures for trisomy19, deletion of 11q22.3 and SF3B1 mutations in CLL.</p>
+<p><a href="./manuscript_S5_trisomy19.html">Section 5: Proteomic signatures of trisomy19</a></p>
+<p><a href="./manuscript_S6_del11q.html">Section 6: Proteomic signature of del(11)(q22.3)</a></p>
+<p><a href="./manuscript_S7_SF3B1.html">Section 7: Proteomic signature of SF3B1</a></p>
 </div>
-<div id="section-6-proteomic-signature-of-del11q" class="section level3">
-<h3><a href="./manuscript_S6_del11q.html">Section 6: Proteomic signature of del11q</a></h3>
+<div id="section-8-identifying-protein-biomarkers-drug-responses-and-clinical-outcomes" class="section level3">
+<h3><a href="./manuscript_S8_drugResponse_Outcomes.html">Section 8: Identifying protein biomarkers drug responses and clinical outcomes</a></h3>
+<p>In this part, we will integrate the protein expression data, genomic data, and patient clinical phenotypes to identify protein biomarkers for drug response and outcome prediction.</p>
 </div>
-<div id="section-7-proteomic-signature-of-sf3b1" class="section level3">
-<h3><a href="./manuscript_S7_SF3B1.html">Section 7: Proteomic signature of SF3B1</a></h3>
-</div>
-<div id="section-8-identifying-proteomic-biomarkers-drug-responses-and-clinical-outcomes" class="section level3">
-<h3><a href="./manuscript_S8_drugResponse_Outcomes.html">Section 8: Identifying proteomic biomarkers drug responses and clinical outcomes</a></h3>
+<div id="section-9-factors-affecting-stat2-expression-in-cll" class="section level3">
+<h3><a href="./manuscript_S9_STAT2.html">Section 9: Factors affecting STAT2 expression in CLL</a></h3>
+<p>In this part, we will characterize the expression of one protein, STAT2, in detail. We will integrate multi-omic datasets to identify the factors that contribute to the variance of STAT2 protein expression among CLL samples, and explore the down-stream effect related to STAT2 protein expression.</p>
 </div>
 
 
@@ -730,13 +729,15 @@ footer is added to webpages before the MathJax javascript. -->
 
 
 
+
+
 </div>
 
 <script>
 
 // add bootstrap table styles to pandoc tables
 function bootstrapStylePandocTables() {
-  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
 }
 $(document).ready(function () {
   bootstrapStylePandocTables();
@@ -754,7 +755,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>
@@ -762,7 +763,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeCodeFolding("hide" === "show");
+  window.initializeCodeFolding("show" === "show");
 });
 </script>
 

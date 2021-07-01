@@ -21,11 +21,11 @@ library(tidyverse)
 #load datasets
 load("../data/patMeta_enc.RData")
 load("../data/ddsrna_enc.RData")
-load("../data/proteomic_LUMOS_enc.RData")
+load("../data/proteomic_explore_enc.RData")
 load("../output/deResList.RData") #precalculated differential expression
 
 
-protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+#protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
 source("../code/utils.R")
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png","pdf"))
 
@@ -34,21 +34,21 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png
 
 # Overview of differentially expressed proteins
 
-## A table of associations with 10% FDR
+## A table of associations with 5% FDR
 ```{r}
 resList <- filter(resList, Gene == "SF3B1") %>%
-  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
+  #mutate(adj.P.Val = adj.P.global) %>% #use IHW corrected P-value
   mutate(Chr = rowData(protCLL[id,])$chromosome_name)
-resList %>% filter(adj.P.Val <= 0.1) %>% 
+resList %>% filter(adj.P.Val <= 0.05) %>% 
   select(name, Chr,logFC, P.Value, adj.P.Val) %>%
   mutate_if(is.numeric, formatC, digits=2) %>%
   DT::datatable()
 ```
 
-## Heatmap of differentially expressed proteins (10% FDR)
+## Heatmap of differentially expressed proteins (6% FDR)
 ```{r, fig.height=8, fig.width=10}
-proList <- filter(resList, !is.na(name), adj.P.Val < 0.1) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
-plotMat <- assays(protCLL)[["QRILC"]][proList,]
+proList <- filter(resList, !is.na(name), adj.P.Val < 0.05) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
+plotMat <- assays(protCLL)[["QRILC_combat"]][proList,]
 rownames(plotMat) <- rowData(protCLL[proList,])$hgnc_symbol
 
 colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
@@ -66,7 +66,7 @@ pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none", cluster_co
                    clustering_method = "ward.D2",
                    color = colorRampPalette(c(colList[2],"white",colList[1]))(100),
                    breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
-                   show_rownames = FALSE, show_colnames = FALSE,
+                   show_rownames = TRUE, show_colnames = FALSE,
                    treeheight_row = 0)
 ```
 
@@ -74,16 +74,19 @@ pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none", cluster_co
 
 ```{r SF3B1_volcano, fig.height=12, fig.width=12}
 plotTab <- resList 
-nameList <- c("SUGP1","MSH6")
-sf3b1Volcano <- plotVolcano(plotTab, fdrCut =0.1, x_lab="log2FoldChange", posCol = colList[1], negCol = colList[2],
+nameList <- c("SUGP1")
+sf3b1Volcano <- plotVolcano(plotTab, fdrCut =0.05, x_lab="log2FoldChange", posCol = colList[1], negCol = colList[2],
             plotTitle = "SF3B1 (Mutants versus WT)", ifLabel = TRUE, labelList = nameList)
+sf3b1Volcano
 ```
 
-## Boxplot plot of selected genes
 
-```{r SF3B1_selected_protein, fig.height=6, fig.width=4}
-nameList <- c("SUGP1","MSH6")
-protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID")
+## Boxplot plot of selected proteins
+
+```{r SF3B1_selected_protein, fig.height=4, fig.width=5}
+nameList <- c("SUGP1")
+protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID") %>%
+  mutate(count = count_combat)
 plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
   mutate(SF3B1 = patMeta[match(patID, patMeta$Patient.ID),]$SF3B1) %>%
   mutate(status = ifelse(SF3B1 %in% 1,"Mutated","WT"),
@@ -91,66 +94,9 @@ plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
   mutate(status = factor(status, levels = c("WT","Mutated")))
 pList <- plotBox(plotTab, pValTabel = resList, y_lab = "Protein expression")
 sf3b1Box <- cowplot::plot_grid(plotlist= pList, ncol=1)
+sf3b1Box
 ```
 
-# Compare with RNA sequencing data
-
-## Differentially expressed genes related to IGHV
-
-Prepare RNA sequencing data
-```{r, cache=TRUE, autodep=TRUE}
-dds$diag <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$diagnosis
-dds$trisomy12 <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy12
-dds$IGHV <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$IGHV.status
-dds$SF3B1 <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$SF3B1
-
-ddsCLL <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, dds$diag %in% "CLL" & !is.na(dds$IGHV) & !is.na(dds$trisomy12) & !is.na(dds$SF3B1)]
-ddsCLL.vst <- varianceStabilizingTransformation(ddsCLL)
-```
-
-Differential expression
-```{r, cache=TRUE, autodep=TRUE}
-design(ddsCLL) <- ~ trisomy12 + IGHV + SF3B1
-deRes <- DESeq(ddsCLL)
-resTab <- results(deRes, contrast = c("SF3B1",1,0), tidy = TRUE) %>%
-  mutate(name = rowData(ddsCLL[row,])$symbol) %>%
-  dplyr::rename(P.Value = pvalue)
-```
-
-### Boxplot of selected genes
-```{r SF3B1_selected_RNA, fig.height=5, fig.width=10}
-plotTab <- assay(ddsCLL.vst[match(nameList, rowData(ddsCLL.vst)$symbol),]) %>%
-  data.frame() %>% rownames_to_column("id") %>%
-  mutate(name = rowData(ddsCLL.vst[id,])$symbol) %>%
-  gather(key = "patID", value = "count", -id, -name) %>% 
-  mutate(SF3B1 = patMeta[match(patID, patMeta$Patient.ID),]$SF3B1) %>%
-  mutate(status = ifelse(SF3B1 %in% 1,"Mutated","WT"))%>%
-  mutate(status = factor(status, levels = c("WT","Mutated")))
-
-pList <- plotBox(plotTab, pValTabel = resTab, y_lab = "RNA expression")
-cowplot::plot_grid(plotlist= pList, ncol=2)
-```
-
-### Correlations between RNA and protein expression
-```{r SF3B1_protein_RNA_cor, fig.height=4, fig.width=8}
-rnaMat <- assay(ddsCLL.vst)
-protMat <- assays(protCLL)[["count"]]
-rownames(protMat) <- rowData(protCLL)$ensembl_gene_id
-overSample <- intersect(colnames(rnaMat), colnames(protMat))
-rnaMat <- rnaMat[,overSample]
-protMat <- protMat[,overSample]
-
-plotList <- lapply(nameList, function(n) {
-  geneId <- rownames(ddsCLL.vst)[match(n, rowData(ddsCLL.vst)$symbol)]
-  stopifnot(length(geneId) ==1)
-  plotTab <- tibble(x=rnaMat[geneId,],y=protMat[geneId,])
-  coef <- cor(plotTab$x, plotTab$y, use="pairwise.complete")
-  annoPos <- ifelse (coef > 0, "left","right")
-  plotCorScatter(plotTab, "x","y", showR2 = FALSE, annoPos = annoPos, x_lab = "RNA expression",
-                 y_lab ="Protein expression", title = n,dotCol = colList[4], textCol = colList[1])
-})
-cowplot::plot_grid(plotlist = plotList, ncol =2)
-```
 
 # Differential splicing
 
@@ -166,120 +112,4 @@ dxdCLL.sub <- dxdCLL[rowData(dxdCLL)$symbol %in% filter(resList, adj.P.Val < 0.1
 
 ```
 
-## Differential exon usage test using DEXseq
-```{r, eval=FALSE}
-dxdCLL.sub$sample <- droplevels(dxdCLL.sub$sample)
-dxdCLL.sub$batch <- droplevels(dxdCLL.sub$batch)
-dxdCLL.sub$condition <- dxdCLL.sub$SF3B1
-formulaFullModel <- ~ sample + exon +  condition:exon  + IGHV:exon + trisomy12:exon + batch:exon
-formulaReducedModel <- ~ sample + exon + IGHV:exon + trisomy12:exon + batch:exon
-dxdCLL.sub <- estimateDispersions(dxdCLL.sub, formula = formulaFullModel)
-dxdCLL.sub <- testForDEU(dxdCLL.sub, reducedModel = formulaReducedModel,
-                  fullModel = formulaFullModel)
-save(dxdCLL.sub, file = "../output/dxdCLL.RData")
-```
-
-
-
-```{r,eval=FALSE}
-testID <- c("ENSG00000105705","ENSG00000116062")
-dxdCLL.sub2 <- dxdCLL[rowData(dxdCLL)$groupID %in% testID, 
-                     !is.na(dxdCLL$SF3B1) & !is.na(dxdCLL$trisomy12) & !is.na(dxdCLL$IGHV)]
-dxdCLL.sub2$sample <- droplevels(dxdCLL.sub2$sample)
-dxdCLL.sub2$batch <- droplevels(dxdCLL.sub2$batch)
-dxdCLL.sub2$condition <- dxdCLL.sub2$SF3B1
-formulaFullModel <- ~ sample + exon +  condition:exon  + IGHV:exon + trisomy12:exon + batch:exon
-formulaReducedModel <- ~ sample + exon + IGHV:exon + trisomy12:exon + batch:exon
-dxdCLL.sub2 <- estimateDispersions(dxdCLL.sub2, formula = formulaFullModel)
-dxdCLL.sub2 <- testForDEU(dxdCLL.sub2, reducedModel = formulaReducedModel,
-                  fullModel = formulaFullModel)
-save(dxdCLL.sub2, file = "../output/dxdCLL2.RData")
-
-```
-
-This analysis takes long time. Here we use pre-calulated results
-```{r}
-library(DEXSeq)
-#load results
-load("../output/dxdCLL.RData")
-load("../output/dxdCLL2.RData")
-```
-
-```{r}
-resDxd1 <- DEXSeqResults(dxdCLL.sub)
-resDxd2 <- DEXSeqResults(dxdCLL.sub2)
-resTab <- bind_rows(data.frame(resDxd1), data.frame(resDxd2)) %>%
-  dplyr::filter(pvalue < 0.05) %>%
-  mutate(symbol = rowData(dds[groupID,])$symbol) 
-resTab[,c("symbol", "featureID", "groupID", "pvalue", "padj")]
-```
-**Two genes pass 10% FDR, SUGP1 and MSH6**
-
-## Plot exon usage
-
-### SUGP1 (ENSG00000105705)
-
-```{r SUGP1_splicing, fig.height=6, fig.width=8}
-plotDEXSeq(resDxd2, "ENSG00000105705", displayTranscripts = TRUE, legend = FALSE, norCounts = TRUE, expression = FALSE)
-```
-
-### MSH6 (ENSG00000116062)
-
-```{r MSH6_splicing, fig.height=6, fig.width=8}
-plotDEXSeq(resDxd2, "ENSG00000116062", displayTranscripts = TRUE, legend = FALSE, norCounts = TRUE, expression = FALSE)
-```
-
-# Validation on peptide level
-
-```{r}
-load("../data/pepCLL_lumos_enc.RData")
-```
-
-```{r, fig.width=15, fig.height=10}
-stratifier <- "SF3B1"
-plotList <- lapply(nameList, function(n) {
- mutStatus <- as.character(patMeta[match(colnames(pepCLL), patMeta$Patient.ID),][[stratifier]])
- names(mutStatus) <- colnames(pepCLL)
- plotPep(pepCLL, n, type = "count", stratifier = stratifier, mutStatus = mutStatus)
-})
-cowplot::plot_grid(plotlist = plotList, ncol=1)
-```
-
-# Validation using timsTOF data
-
-Load timsTOF data
-```{r}
-load("../data/proteomic_timsTOF_enc.RData")
-load("../output/deResList_timsTOF.RData")
-```
-
-```{r}
-resList <- dplyr::filter(resList, Gene == "SF3B1") %>%
-  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
-  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
-```
-
-```{r SF3B1_selected_protein_timsTOF, fig.height=4, fig.width=12}
-protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID")
-plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
-  mutate(SF3B1 = patMeta[match(patID, patMeta$Patient.ID),]$SF3B1) %>%
-  mutate(status = ifelse(SF3B1 %in% 1,"Mutated","WT"),
-         name = hgnc_symbol) %>%
-  mutate(status = factor(status, levels = c("WT","Mutated")))
-pList <- plotBox(plotTab, pValTabel = resList)
-cowplot::plot_grid(plotlist= pList, ncol=2)
-```
-
-# Assemble Figure
-
-## Supplementary Figure
-```{r, fig.height=12, fig.width=13}
-spliceSUGP1 <- ggdraw() + draw_image("../output/SUGP1_splicing.svg")
-spliceMSH6 <- ggdraw() + draw_image("../output/MSH6_splicing.svg")
-upRow <- plot_grid(sf3b1Volcano, sf3b1Box, rel_widths = c(0.6,0.4),
-                   ncol=2, labels = c("A","B"), label_size = 20)
-downRow <- plot_grid(spliceSUGP1, spliceMSH6, ncol=2, labels = c("C","D"), label_size = 20)
-
-plot_grid(upRow, downRow, ncol=1, rel_heights = c(0.5,0.5))
-```
 

@@ -1,5 +1,5 @@
 ---
-title: "Section 6: Proteomic signature of del11q"
+title: "Section 6: Proteomic signature of del(11)(q22.3)"
 author: "Junyan Lu"
 date: "2020-10-09"
 output: workflowr::wflow_html
@@ -22,11 +22,12 @@ library(tidyverse)
 
 #load datasets
 load("../data/patMeta_enc.RData")
+load("../data/proteomic_explore_enc.RData")
 load("../data/ddsrna_enc.RData")
-load("../data/proteomic_LUMOS_enc.RData")
 load("../output/deResList.RData") #precalculated differential expression
+load("../output/deResListRNA.RData")
 
-protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+#protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
 source("../code/utils.R")
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png","pdf"))
 
@@ -35,21 +36,25 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png
 
 # Overview of differentially expressed proteins
 
-## A table of associations with 10% FDR
+## A table of associations with 5% FDR
 ```{r}
 resList <- filter(resList, Gene == "del11q") %>%
-  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
+  #mutate(adj.P.Val = adj.P.global) %>% #use IHW corrected P-value
   mutate(Chr = rowData(protCLL[id,])$chromosome_name)
-resList %>% filter(adj.P.Val <= 0.1) %>% 
+resList %>% filter(adj.P.Val <= 0.05) %>% 
   select(name, Chr,logFC, P.Value, adj.P.Val) %>%
   mutate_if(is.numeric, formatC, digits=2) %>%
   DT::datatable()
 ```
+How many are on chr11
+```{r}
+table(filter(resList,adj.P.Val <= 0.05)$Chr)
+```
 
-## Heatmap of differentially expressed proteins (10% FDR)
+## Heatmap of differentially expressed proteins (5% FDR)
 ```{r, fig.height=5, fig.width=10}
-proList <- filter(resList, !is.na(name), adj.P.Val < 0.1) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
-plotMat <- assays(protCLL)[["QRILC"]][proList,]
+proList <- filter(resList, !is.na(name), adj.P.Val < 0.05) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
+plotMat <- assays(protCLL)[["QRILC_combat"]][proList,]
 rownames(plotMat) <- rowData(protCLL[proList,])$hgnc_symbol
 
 colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
@@ -58,7 +63,7 @@ colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
 colAnno$del11q <- ifelse(colAnno$del11q %in% 1, "yes","no")
 
 rowAnno <- rowData(protCLL)[proList,c("chromosome_name","hgnc_symbol"),drop=FALSE] %>% 
-  data.frame(stringsAsFactors = FALSE) %>%
+  data.frame(stringsAsFactors = FALSE) %>% remove_rownames() %>%
   mutate(onChr11 = ifelse(chromosome_name == "11","yes","no")) %>%
   select(hgnc_symbol, onChr11) %>% data.frame() %>% column_to_rownames("hgnc_symbol")
 
@@ -83,24 +88,25 @@ pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none",
 ```{r del11q_volcano, fig.height=12, fig.width=12}
 plotTab <- resList  %>% mutate(onChr11 = ifelse(Chr %in% "11","yes","no"))
 #nameList <- filter(resList, adj.P.Val < 0.1)$name
-nameList <- c("CUL5","ATM","TNFAIP8L3")
-del11qVolcano <- plotVolcano(plotTab, fdrCut =0.1, x_lab="log2FoldChange", posCol = colList[1], negCol = colList[2],
-            plotTitle = "del11q", ifLabel = TRUE, labelList = nameList)
+nameList <- c("ATM","CUL5")
+del11qVolcano <- plotVolcano(plotTab, fdrCut =0.05, x_lab="log2FoldChange", posCol = colList[1], negCol = colList[2],
+            plotTitle = "del(11)(q22.3)", ifLabel = TRUE, labelList = nameList)
 del11qVolcano
 ```
 
+
 ## Boxplot plot of selected genes
 
-```{r del11q_selected_protein, fig.height=8, fig.width=10}
-nameList <- c("ATM","CUL5","TNFAIP8L3")
-protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID")
+```{r del11q_selected_protein, fig.height=8, fig.width=5}
+protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID") %>%
+  mutate(count = count_combat)
 plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
   mutate(del11q = patMeta[match(patID, patMeta$Patient.ID),]$del11q) %>%
-  mutate(status = ifelse(del11q %in% 1,"del11q","WT"),
+  mutate(status = ifelse(del11q %in% 1,"del(11)(q22.3)","other"),
          name = hgnc_symbol) %>%
-  mutate(status = factor(status, levels = c("WT","del11q")))
+  mutate(status = factor(status, levels = c("other","del(11)(q22.3)")))
 pList <- plotBox(plotTab, pValTabel = resList, y_lab = "Protein expression")
-del11qBox <- cowplot::plot_grid(plotlist= pList, ncol=2)
+del11qBox <- cowplot::plot_grid(plotlist= pList, ncol=1)
 del11qBox
 ```
 
@@ -111,44 +117,34 @@ del11qBox
 
 Prepare RNA sequencing data
 ```{r, cache=TRUE, autodep=TRUE}
-dds$diag <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$diagnosis
-dds$trisomy12 <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$trisomy12
-dds$IGHV <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$IGHV.status
-dds$del11q <- patMeta[match(dds$PatID, patMeta$Patient.ID),]$del11q
-
-
-ddsCLL <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, dds$diag %in% "CLL" & !is.na(dds$IGHV) & !is.na(dds$trisomy12) & !is.na(dds$del11q)]
-ddsCLL.vst <- varianceStabilizingTransformation(ddsCLL)
+ddsCLL <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id,]
+ddsCLL.vst <- varianceStabilizingTransformation(dds)
 ```
 
 Differential expression
-```{r, cache=TRUE, autodep=TRUE}
-design(ddsCLL) <- ~ trisomy12 + IGHV + del11q
-deRes <- DESeq(ddsCLL)
-resTab <- results(deRes, contrast = c("del11q","1","0"), tidy = TRUE) %>%
-  mutate(name = rowData(ddsCLL[row,])$symbol) %>%
-  dplyr::rename(P.Value = pvalue)
+```{r}
+resTab <- filter(resListRNA, Gene == "del11q")
 ```
 
 ### Boxplot of selected genes
-```{r del11q_selected_RNA, fig.height=8, fig.width=10}
+```{r del11q_selected_RNA, fig.height=8, fig.width=5}
 plotTab <- assay(ddsCLL.vst[match(nameList, rowData(ddsCLL.vst)$symbol),]) %>%
   data.frame() %>% rownames_to_column("id") %>%
   mutate(name = rowData(ddsCLL.vst[id,])$symbol) %>%
   gather(key = "patID", value = "count", -id, -name) %>% 
   mutate(del11q = patMeta[match(patID, patMeta$Patient.ID),]$del11q) %>%
-  mutate(status = ifelse(del11q %in% 1,"del11q","WT"))  %>%
-  mutate(status = factor(status, levels = c("WT","del11q")))
+  mutate(status = ifelse(del11q %in% 1,"del11q","other"))  %>%
+  mutate(status = factor(status, levels = c("other","del11q")))
 
 
 pList <- plotBox(plotTab, pValTabel = resTab, y_lab = "Normalized RNA expression")
-cowplot::plot_grid(plotlist= pList, ncol=2)
+cowplot::plot_grid(plotlist= pList, ncol=1)
 ```
 
 ### Correlations between RNA and protein expression
-```{r del11q_protein_RNA_cor, fig.height=9, fig.width=9}
+```{r del11q_protein_RNA_cor, fig.height=4, fig.width=8}
 rnaMat <- assay(ddsCLL.vst)
-protMat <- assays(protCLL)[["count"]]
+protMat <- assays(protCLL)[["count_combat"]]
 rownames(protMat) <- rowData(protCLL)$ensembl_gene_id
 overSample <- intersect(colnames(rnaMat), colnames(protMat))
 rnaMat <- rnaMat[,overSample]
@@ -167,49 +163,8 @@ cowplot::plot_grid(plotlist = plotList, ncol =2)
 ```
 
 
-# Validation on peptide level
 
-```{r}
-load("../data/pepCLL_lumos_enc.RData")
-```
-
-```{r, fig.width=20, fig.height=15}
-stratifier <- "del11q"
-plotList <- lapply(nameList, function(n) {
- mutStatus <- as.character(patMeta[match(colnames(pepCLL), patMeta$Patient.ID),][[stratifier]])
- names(mutStatus) <- colnames(pepCLL)
- plotPep(pepCLL, n, type = "count", stratifier = stratifier, mutStatus = mutStatus)
-})
-cowplot::plot_grid(plotlist = plotList, ncol=1)
-```
-
-# Validation using timsTOF data
-
-Load timsTOF data
-```{r}
-load("../data/proteomic_timsTOF_enc.RData")
-load("../output/deResList_timsTOF.RData")
-```
-
-```{r}
-resList <- filter(resList, Gene == "del11q") %>%
-  mutate(adj.P.Val = adj.P.IHW) %>% #use IHW corrected P-value
-  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
-```
-
-```{r del11q_selected_protein_timsTOF, fig.height=4, fig.width=8}
-protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID")
-plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
-  mutate(del11q = patMeta[match(patID, patMeta$Patient.ID),]$del11q) %>%
-  mutate(status = ifelse(del11q %in% 1,"del11q","WT"),
-         name = hgnc_symbol) %>%
-    mutate(status = factor(status, levels = c("WT","del11q")))
-pList <- plotBox(plotTab, pValTabel = resList)
-cowplot::plot_grid(plotlist= pList, ncol=2)
-```
-**Among the candidates, only ATM is detected by timsTOF**
-
-# Genome coordinate plot
+# Plot RNA and protein expression in the chromosome regions around 11q22.3
 
 ```{r}
 load("../data/exprCNV_enc.RData")
@@ -222,6 +177,7 @@ normalized <- TRUE
 if (normalized) {
   #for protein
   exprMat <- select(allProtTab,patID, id,expr) %>% 
+    distinct(patID, id, .keep_all = TRUE) %>%
     spread(key = patID, value =expr) %>% data.frame() %>% 
     column_to_rownames("id") %>% as.matrix()
   qm <- jyluMisc::mscale(exprMat, useMad = F)
@@ -232,6 +188,7 @@ if (normalized) {
 
   #for RNA
   exprMat <- select(allRnaTab,patID, id,expr) %>% 
+    distinct(patID, id, .keep_all = TRUE) %>%
     spread(key = patID, value =expr) %>% data.frame() %>% 
     column_to_rownames("id") %>% as.matrix()
   qm <- jyluMisc::mscale(exprMat, useMad = F)
@@ -383,14 +340,3 @@ g <- plotExprCNV(patList,"chr11",allBand, allLine.wes, allProtTab, allRnaTab,
 geneCoordPlot <- plot_grid(g$main, g$legend, ncol = 1, rel_heights = c(1,0.2))
 geneCoordPlot
 ```
-
-# Assemble figure
-
-## Supplementary Figure
-```{r, fig.height=12, fig.width=15}
-plot_grid(plot_grid(del11qVolcano, del11qBox, ncol = 2, rel_widths = c(0.45,0.55),
-                    labels = c("A","B"), label_size = 20),
-          geneCoordPlot,
-          ncol=1, rel_heights = c(0.55,0.45), labels = c("","C"), label_size = 20)
-```
-

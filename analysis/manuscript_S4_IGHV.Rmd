@@ -1,0 +1,224 @@
+---
+title: "Section 4: Proteomic signature of IGHV mutation status"
+author: "Junyan Lu"
+date: "2020-10-09"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: inline
+---
+
+# Load packages and dataset
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(limma)
+library(DESeq2)
+library(proDA)
+library(tidygraph)
+library(igraph)
+library(ggraph)
+library(pheatmap)
+library(ComplexHeatmap)
+library(cowplot)
+library(ggbeeswarm)
+library(SummarizedExperiment)
+library(tidyverse)
+
+#load datasets
+load("../data/patMeta_enc.RData")
+load("../data/ddsrna_enc.RData")
+load("../data/proteomic_explore_enc.RData")
+load("../output/deResList.RData") #precalculated differential expression
+load("../output/deResListRNA.RData")
+#protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+source("../code/utils.R")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png","pdf"))
+```
+
+
+# Overview of differentially expressed proteins related to IGHV mutational status
+
+## A table of associations with 5% FDR
+```{r}
+resList <- filter(resList, Gene == "IGHV.status") %>%
+  #mutate(adj.P.Val = adj.P.global) %>% #use IHW corrected P-value
+  mutate(Chr = rowData(protCLL[id,])$chromosome_name)
+resList %>% filter(adj.P.Val <= 0.05) %>% 
+  select(name, Chr,logFC, P.Value, adj.P.Val) %>%
+  mutate_if(is.numeric, formatC, digits=2) %>%
+  DT::datatable()
+```
+
+## Number of differentially expressed proteins
+```{r}
+sumTab <- filter(resList, adj.P.Val < 0.05) %>% 
+  mutate(dir = ifelse(t>0, "up","down"))
+table(sumTab$dir)
+```
+
+## Heatmap of differentially expressed proteins (1% FDR)
+```{r IGHV_heatmap, fig.height=8, fig.width=10}
+proList <- filter(resList, !is.na(name), adj.P.Val < 0.01) %>% distinct(name, .keep_all = TRUE) %>% pull(id)
+plotMat <- assays(protCLL)[["QRILC_combat"]][proList,]
+rownames(plotMat) <- rowData(protCLL[proList,])$hgnc_symbol
+
+colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
+  select(Patient.ID, trisomy12, IGHV.status, Methylation_Cluster) %>% 
+  arrange(IGHV.status) %>%
+  data.frame() %>% column_to_rownames("Patient.ID")
+colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
+
+plotMat <- jyluMisc::mscale(plotMat, censor = 5)
+plotMat <- plotMat[,rownames(colAnno)]
+annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
+                IGHV.status = c(M = colList[4], U = colList[3]),
+                onChr12 = c(yes = colList[1],no = "white"))
+
+pheatmap::pheatmap(plotMat, annotation_col = colAnno, scale = "none", cluster_cols = TRUE,
+                   clustering_method = "ward.D2",
+                   color = colorRampPalette(c(colList[2],"white",colList[1]))(100),
+                   breaks = seq(-5,5, length.out = 101), annotation_colors = annoCol, 
+                   show_rownames = FALSE, show_colnames = FALSE,
+                   treeheight_row = 0)
+```
+
+## Volcano plot
+
+```{r IGHV_volcano, fig.height=12, fig.width=12}
+plotTab <- resList 
+nameList <- c("BANK1", "CASP3", "STAT2", "ZAP70")
+ighvVolcano <- plotVolcano(plotTab, fdrCut =0.05, x_lab=bquote("log"[2]*"(fold change)"), posCol = colList[1], negCol = colList[2],
+            plotTitle = "IGHV status (M-CLL versus U-CLL)", ifLabel = TRUE, labelList = nameList)
+ighvVolcano
+#ggsave("IGHV_volcano.pdf", height = 6, width = 6)
+```
+
+## Boxplot plot of selected proteins
+
+```{r IGHV_selected_protein, fig.height=8, fig.width=10}
+protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID") %>%
+  mutate(count = count_combat)
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(IGHV = patMeta[match(patID, patMeta$Patient.ID),]$IGHV.status) %>%
+  mutate(status = ifelse(IGHV %in% "M","M-CLL","U-CLL"),
+         name = hgnc_symbol) %>%
+  mutate(status = factor(status, levels = c("U-CLL","M-CLL")))
+pList <- plotBox(plotTab, pValTabel = resList, y_lab = "Protein expression")
+protBox <- cowplot::plot_grid(plotlist= pList, ncol=2)
+protBox
+#ggsave("IGHV_box.pdf", height = 6, width = 8)
+```
+
+
+## Gene set enrichment analysis
+
+### Barplot of enriched pathways
+```{r, fig.height=6, fig.width=12}
+gmts = list(H= "../data/gmts/h.all.v6.2.symbols.gmt",
+            KEGG = "../data/gmts/c2.cp.kegg.v6.2.symbols.gmt",
+            combine = "../data/gmts/hallmark_kegg_combine.gmt")
+inputTab <- resList %>% filter(adj.P.Val < 0.1, Gene == "IGHV.status") %>%
+  mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>% filter(!is.na(name)) %>%
+  distinct(name, .keep_all = TRUE) %>%
+  select(name, t) %>% data.frame() %>% column_to_rownames("name")
+enRes <- list()
+enRes[["Proteins associated with IGHV status"]] <- runGSEA(inputTab, gmts$H, "page")
+
+ighvEnrich <- plotEnrichmentBar(enRes[[1]], pCut =0.1, ifFDR= TRUE, setName = "", 
+                       title = names(enRes)[1], removePrefix = "HALLMARK_", insideLegend=FALSE, setMap = setMap) 
+ighvEnrich
+ggsave("IGHV_enrich.pdf", height=2.5, width=7)
+```
+
+### Barplot of enriched KEGG pathways
+```{r, fig.height=6, fig.width=12}
+
+enRes <- list()
+enRes[["Proteins associated with IGHV status"]] <- runGSEA(inputTab, gmts$KEGG, "page")
+
+ighvEnrich <- plotEnrichmentBar(enRes[[1]], pCut =0.05, ifFDR= TRUE, setName = "HALLMARK gene set", 
+                       title = names(enRes)[1], removePrefix = "HALLMARK_", insideLegend=TRUE) +
+  theme(legend.position = c(0.9,0.11))
+ighvEnrich
+```
+
+
+### Heatmaps of protein expression in enriched pathways
+
+```{r}
+resList.sig <- filter(resList, !is.na(name), adj.P.Val < 0.05) %>% distinct(name, .keep_all = TRUE) 
+plotMat <- assays(protCLL)[["QRILC_combat"]][resList.sig$id,]
+rownames(plotMat) <- rowData(protCLL[rownames(plotMat),])$hgnc_symbol
+colAnno <- filter(patMeta, Patient.ID %in% colnames(protCLL)) %>%
+  select(Patient.ID, IGHV.status, trisomy12) %>%
+  data.frame() %>% column_to_rownames("Patient.ID")
+colAnno$trisomy12 <- ifelse(colAnno$trisomy12 %in% 1, "yes","no")
+
+plotMat <- jyluMisc::mscale(plotMat, censor = 5)
+
+annoCol <- list(trisomy12 = c(yes = "black",no = "grey80"),
+                IGHV.status = c(M = colList[4], U = colList[3]),
+                onChr12 = c(yes = colList[1],no = "white"))
+```
+
+```{r IGHV_IFNG_heatmap, fig.height=5, fig.width=10}
+plotSetHeatmap(resList.sig, gmts$H, "HALLMARK_INTERFERON_GAMMA_RESPONSE", plotMat, colAnno, annoCol = annoCol, highLight = nameList)
+```
+
+```{r, IGHV_IFNA, fig.height=3, fig.width=10}
+plotSetHeatmap(resList.sig, gmts$H, "HALLMARK_INTERFERON_ALPHA_RESPONSE", plotMat, colAnno, annoCol = annoCol, highLight = nameList)
+```
+
+```{r IGHV_BCR_heatmap, fig.height=5, fig.width=10}
+plotSetHeatmap(resList.sig, gmts$KEGG, "KEGG_B_CELL_RECEPTOR_SIGNALING_PATHWAY", plotMat, colAnno, annoCol = annoCol, highLight = nameList)
+```
+
+# Compare with RNA sequencing data
+
+## Differentially expressed genes related to IGHV
+
+Prepare RNA sequencing data
+```{r, cache=TRUE, autodep=TRUE}
+ddsCLL <- dds[rownames(dds) %in% rowData(protCLL)$ensembl_gene_id, ]
+ddsCLL.vst <- varianceStabilizingTransformation(ddsCLL)
+```
+
+Use Differential expression expression
+```{r,}
+
+resTab <- resListRNA %>% filter(Gene == "IGHV.status")
+```
+
+### Boxplot of selected genes
+```{r IGHV_selected_RNA, fig.height=8, fig.width=10}
+plotTab <- assay(ddsCLL.vst[match(nameList, rowData(ddsCLL.vst)$symbol),]) %>%
+  data.frame() %>% rownames_to_column("id") %>%
+  mutate(name = rowData(ddsCLL.vst[id,])$symbol) %>%
+  gather(key = "patID", value = "count", -id, -name) %>% 
+  mutate(IGHV = patMeta[match(patID, patMeta$Patient.ID),]$IGHV.status) %>%
+  mutate(status = ifelse(IGHV %in% "M","M-CLL","U-CLL"))%>%
+  mutate(status = factor(status, levels = c("U-CLL","M-CLL")))
+
+pList <- plotBox(plotTab, pValTabel = resTab, y_lab = "RNA expression")
+cowplot::plot_grid(plotlist= pList, ncol=2)
+```
+
+
+### Correlations between RNA and protein expression
+```{r IGHV_protein_RNA_cor, fig.height=8, fig.width=8}
+rnaMat <- assay(ddsCLL.vst)
+protMat <- assays(protCLL)[["count_combat"]]
+rownames(protMat) <- rowData(protCLL)$ensembl_gene_id
+overSample <- intersect(colnames(rnaMat), colnames(protMat))
+rnaMat <- rnaMat[,overSample]
+protMat <- protMat[,overSample]
+
+plotList <- lapply(nameList, function(n) {
+  geneId <- rownames(ddsCLL.vst)[match(n, rowData(ddsCLL.vst)$symbol)]
+  stopifnot(length(geneId) ==1)
+  plotTab <- tibble(x=rnaMat[geneId,],y=protMat[geneId,])
+  coef <- cor(plotTab$x, plotTab$y, use="pairwise.complete")
+  annoPos <- ifelse (coef > 0, "left","right")
+  plotCorScatter(plotTab, "x","y", showR2 = FALSE, annoPos = annoPos, x_lab = "RNA expression",
+                 y_lab ="Protein expression", title = n,dotCol = colList[4], textCol = colList[1])
+})
+cowplot::plot_grid(plotlist = plotList, ncol =2)
+```

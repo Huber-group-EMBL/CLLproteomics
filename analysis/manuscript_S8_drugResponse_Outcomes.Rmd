@@ -1,5 +1,5 @@
 ---
-title: "Section 8: Identifying proteomic biomarkers drug responses and clinical outcomes"
+title: "Section 8: Identifying protein biomarkers drug responses and clinical outcomes"
 author: "Junyan Lu"
 date: "2020-10-09"
 output: workflowr::wflow_html
@@ -17,19 +17,25 @@ library(jyluMisc)
 library(survival)
 library(survminer)
 library(maxstat)
+library(igraph)
+library(tidygraph)
+library(ggraph)
 library(glmnet)
 library(SummarizedExperiment)
 library(cowplot)
 library(tidyverse)
 
 load("../data/patMeta_enc.RData")
-load("../data/pheno1000_enc.RData")
+load("../data/ddsrna_enc.RData")
+load("../data/proteomic_explore_enc.RData")
+load("../output/deResList.RData") #precalculated differential expression
 load("../data/survival_enc.RData")
-load("../data/proteomic_LUMOS_enc.RData") #using the LUMOS data
-protCLL$trisomy12 <- patMeta[match(colnames(protCLL),patMeta$Patient.ID),]$trisomy12
-protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+load("../data/screenData_enc.RData")
+
+#protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
 source("../code/utils.R")
 ```
+
 
 
 # Correlations between protein abundance and drug response
@@ -38,7 +44,7 @@ source("../code/utils.R")
 
 Drug screening data from 1000CPS: low quality samples after QC are removed; the edge effect corrected viability values are used
 ```{r}
-viabMat <- pheno1000_main %>% filter(!lowQuality, ! Drug %in% c("DMSO","PBS"), patientID %in% colnames(protCLL)) %>%
+viabMat <- screenData %>% filter(!lowQuality, ! Drug %in% c("DMSO","PBS"), patientID %in% colnames(protCLL)) %>%
   group_by(patientID, Drug) %>% summarise(viab = mean(normVal.adj.cor_auc)) %>%
   spread(key = patientID, value = viab) %>%
   data.frame(stringsAsFactors = FALSE) %>% column_to_rownames("Drug") %>%
@@ -52,8 +58,8 @@ proMat <- proMat[,colnames(viabMat)]
 
 #Remove proteins without much variance (to lower multi-testing burden)
 
-sds <- genefilter::rowSds(proMat,na.rm=TRUE)
-proMat <- proMat[sds > genefilter::shorth(sds),]
+#sds <- genefilter::rowSds(proMat,na.rm=TRUE)
+#proMat <- proMat[sds > genefilter::shorth(sds),]
 ```
 
 How many samples have both proteomics data and CPS1000 screen data
@@ -61,27 +67,31 @@ How many samples have both proteomics data and CPS1000 screen data
 ncol(proMat)
 ```
 
-## Association test
+## Association test using univariate test
 
 ```{r}
 resTab.auc <- lapply(rownames(viabMat),function(drugName) {
   viab <- viabMat[drugName, ]
-  designMat <- model.matrix(~1+viab)
+  batch <- protCLL[,colnames(viabMat)]$batch
+  designMat <- model.matrix(~1+viab+batch)
   fit <- lmFit(proMat,  designMat)
   fit2 <- eBayes(fit)
   corRes <- topTable(fit2, number ="all", adjust.method = "BH", coef = "viab") %>% rownames_to_column("id") %>%
-    mutate(symbol = rowData(protCLL[id,])$hgnc_symbol, Drug = drugName)
-}) %>% bind_rows() %>% mutate(adj.P.Val = p.adjust(P.Value, method = "BH")) %>% arrange(P.Value)
+    mutate(symbol = rowData(protCLL[id,])$hgnc_symbol, Drug = drugName) %>%
+    mutate(adj.P.Val = p.adjust(P.Value, method = "BH"))
+}) %>% bind_rows() %>% arrange(P.Value)
 ```
 
-### Bar plot to show the number of associations (10% FDR)
 
-```{r, fig.width=10, fig.height=8}
+### Bar plot to show the number of significant associations (5% FDR)
+
+```{r, fig.width=15, fig.height=8}
 #Select significant associations (10% FDR)
-resTab.sig <- filter(resTab.auc, adj.P.Val < 0.1) %>% 
+resTab.sig <- filter(resTab.auc, adj.P.Val <= 0.05) %>% 
   select(Drug, symbol, id,logFC, P.Value, adj.P.Val)
 
-plotTab <- resTab.sig %>% group_by(Drug) %>%
+plotTab <- resTab.sig %>%
+  group_by(Drug) %>%
   summarise(n = length(id)) %>% ungroup()
 ordTab <- group_by(plotTab, Drug) %>% summarise(total = sum(n)) %>%
   arrange(desc(total))
@@ -89,85 +99,26 @@ plotTab <- mutate(plotTab, Drug = factor(Drug, levels = ordTab$Drug)) %>%
   filter(n>0)
 
 drugBar <- ggplot(plotTab, aes(x=Drug, y = n)) + geom_bar(stat="identity",fill=colList[4]) + 
-  geom_text(aes(label = paste0("n=", n)),vjust=-1,col=colList[1]) +
-  ylim(0,15)+ annotate("text", label = "Number of associations (10% FDR)", x=Inf, y=Inf,hjust=1, vjust=1, size=6)+
+  geom_text(aes(label = paste0(n)),vjust=-1,col="black", size=6) +
+  ylim(0,500)+ #annotate("text", label = "Number of associations (10% FDR)", x=Inf, y=Inf,hjust=1, vjust=1, size=6)+
   theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-  ylab("Number") + xlab("")
-
-drugBar
+  ylab("Number of associations (5% FDR)") + xlab("")
 ```
 
-### Table of significant associations (10% FDR)
+### Table of significant associations (5% FDR)
 ```{r}
 resTab.sig %>% mutate_if(is.numeric, formatC, digits=2, format= "e") %>%
   DT::datatable()
 ```
 
-### Correlation plot of selected candidates
+### Correlation plot of selected protein-drug pairs
 
-```{r}
-plotDrugCorScatter <- function(inputTab, x, y, x_lab = "X", y_lab = "Y", title = "",
-                           col = NULL, showR2 = TRUE, annoPos = "right",
-                           dotCol = colList, textCol="darkred") {
+Stratified by IGHV and trisomy12
+```{r, fig.width=10, fig.height=10}
+proMat.combat <- assays(protCLL)[["count_combat"]]
+proMat.combat <- proMat.combat[,colnames(viabMat)]
 
-  #prepare table for plotting
-  plotTab <- tibble(x = inputTab[[x]],y=inputTab[[y]])
-  if (!is.null(col)) plotTab <- mutate(plotTab, status = inputTab[[col]])
-  plotTab <- filter(plotTab, !is.na(x), !is.na(y))
-
-  #prepare annotation values
-  corRes <- cor.test(plotTab$x, plotTab$y)
-  pval <- formatNum(corRes$p.value, digits = 1, format = "e")
-  Rval <- formatNum(corRes$estimate, digits = 1, format = "e")
-  R2val <- formatNum(corRes$estimate^2, digits = 1, format = "e")
-  Nval <- nrow(plotTab)
-  annoP <- bquote(italic("P")~"="~.(pval))
-
-  if (showR2) {
-    annoCoef <-  bquote(R^2~"="~.(R2val))
-  } else {
-    annoCoef <- bquote(R~"="~.(Rval))
-  }
-  annoN <- bquote(N~"="~.(Nval))
-
-  corPlot <- ggplot(plotTab, aes(x = x, y = y))
-
-  if (!is.null(col)) {
-    corPlot <- corPlot + geom_point(aes(fill = status), shape =21, size =3) +
-      scale_fill_manual(values = dotCol)
-  } else {
-    corPlot <- corPlot + geom_point(fill = dotCol[1], shape =21, size=3)
-  }
-
-  corPlot <- corPlot +   geom_smooth(formula = y~x,method = "lm", se=FALSE, color = "grey50", linetype ="dashed" )
-
-  if (annoPos == "right") {
-
-    corPlot <- corPlot + annotate("text", x = max(plotTab$x), y = Inf, label = annoN,
-                                  hjust=1, vjust =2, size = 5, parse = FALSE, col= textCol) +
-      annotate("text", x = max(plotTab$x), y = Inf, label = annoP,
-               hjust=1, vjust =4, size = 5, parse = FALSE, col= textCol) +
-      annotate("text", x = max(plotTab$x), y = Inf, label = annoCoef,
-               hjust=1, vjust =6, size = 5, parse = FALSE, col= textCol)
-
-  } else if (annoPos== "left") {
-    corPlot <- corPlot + annotate("text", x = min(plotTab$x), y = Inf, label = annoN,
-                                  hjust=0, vjust =2, size = 5, parse = FALSE, col= textCol) +
-      annotate("text", x = min(plotTab$x), y = Inf, label = annoP,
-               hjust=0, vjust =4, size = 5, parse = FALSE, col= textCol) +
-      annotate("text", x = min(plotTab$x), y = Inf, label = annoCoef,
-               hjust=0, vjust =6, size = 5, parse = FALSE, col= textCol)
-  }
-  corPlot <- corPlot + ylab(y_lab) + xlab(x_lab) + ggtitle(title) +
-    scale_y_continuous(labels = scales::number_format(accuracy = 0.1)) +
-    scale_x_continuous(labels = scales::number_format(accuracy = 0.1)) +
-    theme_full
-  corPlot
-}
-```
-
-```{r, fig.width=12, fig.height=4}
-pairList <- list(c("Cobimetinib","STAT2"),c("Venetoclax","PGD"),c("Idelalisib", "HEBP2"))
+pairList <- list(c("Cobimetinib","STAT2"),c("Trametinib", "PTPN11"), c("Ibrutinib","LYN"),c("Ibrutinib","ANXA2"))
 plotList <- lapply(pairList, function(pair) {
   textCol <- "darkred"
   drugName <- pair[1]
@@ -175,7 +126,7 @@ plotList <- lapply(pairList, function(pair) {
   id <- rownames(protCLL)[match(proteinName, rowData(protCLL)$hgnc_symbol)]
   plotTab <- tibble(patID = colnames(viabMat), 
                     viab = viabMat[drugName,],
-                    expr = proMat[id,]) %>%
+                    expr = proMat.combat[id,]) %>%
     mutate(IGHV = protCLL[,patID]$IGHV.status,
            trisomy12 = protCLL[,patID]$trisomy12) %>%
     mutate(trisomy12 = ifelse(trisomy12 ==1,"yes","no")) %>%
@@ -226,21 +177,94 @@ plotList <- lapply(pairList, function(pair) {
 })
 
 
-drugCor <- cowplot::plot_grid(plotlist = plotList, ncol =3)
+drugCor <- cowplot::plot_grid(plotlist = plotList, ncol =2)
 drugCor
+```
+
+
+For TP53-MDM2 inhibitors, color the samples by their TP53 mutational status
+```{r, fig.width=10, fig.height=5}
+
+pairListTP53 <- list(c("Nutlin-3a","USP5"),c("RO5963", "PHF23"))
+
+plotList <- lapply(pairListTP53, function(pair) {
+  textCol <- "darkred"
+  drugName <- pair[1]
+  proteinName <- pair[2]
+  id <- rownames(protCLL)[match(proteinName, rowData(protCLL)$hgnc_symbol)]
+  plotTab <- tibble(patID = colnames(viabMat), 
+                    viab = viabMat[drugName,],
+                    expr = proMat.combat[id,]) %>%
+    mutate(IGHV = protCLL[,patID]$IGHV.status,
+           #trisomy12 = protCLL[,patID]$trisomy12,
+           TP53 = patMeta[match(patID, patMeta$Patient.ID),]$TP53) %>%
+    #mutate(trisomy12 = ifelse(trisomy12 ==1,"yes","no")) %>%
+    mutate(TP53 = ifelse(TP53 ==1,"Mut","WT")) %>%
+    filter(!is.na(viab),!is.na(expr))
+  
+  pval <- formatNum(filter(resTab.sig, Drug == drugName, symbol == proteinName)$P.Value, digits = 1, format = "e")
+  Rval <- sprintf("%1.2f",cor(plotTab$viab, plotTab$expr))
+  Nval <- nrow(plotTab)
+  annoP <- bquote(italic("P")~"="~.(pval))
+  annoN <- bquote(N~"="~.(Nval))
+  annoCoef <- bquote(R~"="~.(Rval))
+
+  corPlot <- ggplot(plotTab, aes(x = viab, y = expr)) + 
+    geom_point(aes(col = TP53, shape = IGHV), size=5) +
+    scale_shape_manual(values = c(M = 19, U = 1)) + 
+    scale_color_manual(values = c(Mut = colList[2], WT = colList[3])) +
+    geom_smooth(formula = y~x,method = "lm", se=FALSE, color = "grey50", linetype ="dashed" ) +
+    ggtitle(sprintf("%s ~ %s", drugName, proteinName)) +
+    ylab("Protein expression") + xlab("Viability after treatment") +
+    theme_full +
+    theme(legend.position = "bottom") 
+
+  if (Rval < 0) annoPos <- "right" else annoPos <- "left"
+  
+  if (annoPos == "right") {
+
+    corPlot <- corPlot + annotate("text", x = max(plotTab$viab), y = Inf, label = annoN,
+                                  hjust=1, vjust =2, size = 5, parse = FALSE, col= textCol) +
+      annotate("text", x = max(plotTab$viab), y = Inf, label = annoP,
+               hjust=1, vjust =4, size = 5, parse = FALSE, col= textCol) +
+      annotate("text", x = max(plotTab$viab), y = Inf, label = annoCoef,
+               hjust=1, vjust =6, size = 5, parse = FALSE, col= textCol)
+
+  } else if (annoPos== "left") {
+    corPlot <- corPlot + annotate("text", x = min(plotTab$viab), y = Inf, label = annoN,
+                                  hjust=0, vjust =2, size = 5, parse = FALSE, col= textCol) +
+      annotate("text", x = min(plotTab$viab), y = Inf, label = annoP,
+               hjust=0, vjust =4, size = 5, parse = FALSE, col= textCol) +
+      annotate("text", x = min(plotTab$viab), y = Inf, label = annoCoef,
+               hjust=0, vjust =6, size = 5, parse = FALSE, col= textCol)
+  }
+  
+  corPlot <- corPlot + ylab("Protein expression") + xlab("Viability after treatment") + 
+    scale_y_continuous(labels = scales::number_format(accuracy = 0.1)) +
+    scale_x_continuous(labels = scales::number_format(accuracy = 0.1))
+
+  corPlot
+})
+
+
+drugCorTP53 <- cowplot::plot_grid(plotlist = plotList, ncol =2)
+drugCorTP53
+ggsave("protDrugTP53.pdf",height = 5, width = 10)
 ```
 
 ### Association test with blocking for IGHV and trisomy12
 
 ```{r, cache=TRUE, autodep=TRUE}
-testList <- filter(resTab.auc, adj.P.Val < 0.1)
+
+testList <- filter(resTab.auc, adj.P.Val <= 0.05)
 resTab.auc.block <- lapply(seq(nrow(testList)),function(i) {
   pair <- testList[i,]
   expr <- proMat[pair$id,]
   viab <- viabMat[pair$Drug, ]
   ighv <- protCLL[,colnames(viabMat)]$IGHV.status
   tri12 <- protCLL[,colnames(viabMat)]$trisomy12
-  res <- anova(lm(viab~ighv+tri12+expr))
+  batch <- protCLL[,colnames(viabMat)]$batch
+  res <- anova(lm(viab~ighv+tri12+batch+expr))
   data.frame(id = pair$id, P.Value = res["expr",]$`Pr(>F)`, symbol = pair$symbol,
              Drug = pair$Drug,
              P.Value.IGHV = res["ighv",]$`Pr(>F)`,P.Value.trisomy12 = res["tri12",]$`Pr(>F)`,
@@ -252,19 +276,86 @@ resTab.auc.block <- lapply(seq(nrow(testList)),function(i) {
 
 Assocations that are still significant
 ```{r}
-resTab.sig %>% mutate_if(is.numeric, formatC, digits=2, format= "e") %>%
+resList.sig.block <- filter(resTab.auc.block, adj.P.Val <= 0.05)
+resList.sig.block %>% mutate_if(is.numeric, formatC, digits=2, format= "e") %>%
   DT::datatable()
 ```
-The above mentioned pairs are still significant. 
+The above mentioned pairs are still significant, indicate IGHV and trisomy12 independent assocations.
 
-## Variance explained
+### Barplot to show significant associations (5% FDR)
+```{r, fig.height=6, fig.width=15}
+plotTab <- resList.sig.block %>% group_by(Drug) %>%
+  summarise(n = length(id)) %>% ungroup()
+ordTab <- group_by(plotTab, Drug) %>% summarise(total = sum(n)) %>%
+  arrange(desc(total))
+plotTab <- mutate(plotTab, Drug = factor(Drug, levels = ordTab$Drug)) %>%
+  filter(n>0)
 
-**Test whether the protein expression can explain additional variance in drug response compared to genetic alone**
+drugBar <- ggplot(plotTab, aes(x=Drug, y = n)) + geom_bar(stat="identity",fill=colList[4]) + 
+  geom_text(aes(label = paste0(n)),vjust=-1,col="black", size=6) +
+  ylim(0,200)+ #annotate("text", label = "Number of associations (10% FDR)", x=Inf, y=Inf,hjust=1, vjust=1, size=6)+
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab("Number of associations (5% FDR)") + xlab("")
 
-Prepare genomics
+```
+
+### Network plots to show significant associations (1% FDR)
+
+1% FDR cut-off is chosen here for better visualization 
+
+```{r}
+dirTab <- select(resTab.sig, Drug, symbol, logFC) %>%
+  mutate(correlation = ifelse(logFC>0,"positive","negative"))
+
+comTab <- resList.sig.block %>% 
+  filter(adj.P.Val < 0.01) %>%
+  select(symbol, Drug, adj.P.Val) %>%
+  left_join(dirTab, by = c("Drug","symbol")) %>%
+  mutate(source = symbol,
+         target = Drug) %>%
+  select(source, target, adj.P.Val, correlation)
+```
+
+```{r, warning=FALSE}
+#get node list
+allNodes <- union(comTab$source, comTab$target) 
+
+nodeList <- data.frame(id = seq(length(allNodes))-1, name = allNodes, stringsAsFactors = FALSE) %>%
+  mutate(type = ifelse(name %in% comTab$source,"protein","drug"),
+         font = ifelse(name %in% comTab$source,"plain","bold"))
+
+#get edge list
+edgeList <- comTab %>%
+  dplyr::rename(Source = source, Target = target) %>% 
+  mutate(Source = nodeList[match(Source,nodeList$name),]$id,
+         Target = nodeList[match(Target, nodeList$name),]$id) %>%
+  data.frame(stringsAsFactors = FALSE)
+
+net <- graph_from_data_frame(vertices = nodeList, d=edgeList, directed = FALSE)
+```
+
+
+```{r trisomy12Complex, fig.height=15, fig.width=15}
+tidyNet <- as_tbl_graph(net)
+drugNet <- ggraph(tidyNet, layout = "igraph", algorithm = "fr") + 
+  geom_edge_link(aes(color = correlation), width=1.5, edge_alpha=0.5) + 
+  geom_node_point(aes(color = type, size = type)) + 
+  geom_node_text(aes(label = name, fontface = font ), repel = FALSE, size=5) +
+  scale_size_manual(values = c(protein = 0, drug=25)) +
+  scale_color_manual(values = c(protein = colList[2],drug = "#D2FAD4")) +
+  scale_edge_color_manual(values = c("positive" = colList[1], "negative" = colList[2])) +
+  theme_graph(base_family = "sans") + 
+  theme(legend.position = "bottom") 
+drugNet
+```
+
+
+## Using multi-variate model to test whether the protein expression can explain additional variance in drug response compared to genetic alone**
+
+Prepare genomic annotations
 ```{r}
 geneMat <-  patMeta[match(colnames(proMat), patMeta$Patient.ID),] %>%
-  select(Patient.ID, IGHV.status, del11p:U1) %>%
+  select(Patient.ID, IGHV.status, del11q:U1) %>%
   mutate_if(is.factor, as.character) %>% mutate(IGHV.status = ifelse(IGHV.status == "M", 1,0)) %>%
   mutate_at(vars(-Patient.ID), as.numeric) %>% #assign a few unknown mutated cases to wildtype 
   mutate_all(replace_na,0) %>%
@@ -294,27 +385,34 @@ compareR2 <- function(Drug, protName, geneMat) {
   r2Gene <- summary(lm(viab~., data=tabGene))$r.squared
   r2Com <- summary(lm(viab~., data=tabCom))$r.squared
   
-  plotTab <- tibble(model = c("genetics",paste0(protName, " expression"),sprintf("genetics + \n%s expression",protName)),
-                    R2 = c(r2Gene, r2Prot, r2Com))
+  plotTab <- tibble(model = c(paste0(protName, " expression"), "genetics",sprintf("genetics + \n%s expression",protName)),
+                    R2 = c(r2Prot, r2Gene, r2Com)) %>%
+    mutate(model= factor(model, levels = rev(model)))
   
   ggplot(plotTab, aes(x=model, y = R2)) + geom_bar(aes(fill = model),stat="identity", width=0.6) + coord_flip() +
-     ggtitle(Drug) + ylab("Variance expalained (R2)") + xlab("") +
+     ggtitle(Drug) + ylab(bquote("Variance explained ("*R^2*")")) + xlab("") + ylim(0,0.7) +
     scale_fill_manual(values = colList[4:6]) + theme_full +theme(legend.position = "none") 
 }
 ``` 
 
-```{r, fig.height=10, fig.width=6}
+```{r, fig.height=12, fig.width=6}
 plotList <- lapply(pairList, function(p) {
   compareR2(p[1],p[2],geneMat)
 })
-plot_grid(plotlist= plotList, ncol= 1)
+#plotList[[1]] <- plotList[[1]] +ylab("")
+plot_grid(plotlist= plotList, ncol= 1, align = "hv")
+#ggsave("drugVarExp.pdf", height = 12, width = 6)
 ```
-Based on the plot of R2 values, including protein expression in multi-variate model could explain additional variance in drug responses compared to genetic alone. For Venetoclax, using a single protein expression value of PGD already explain more variance than genetics.
 
-```{r, fig.width=5, fig.height=3}
-stat2Bar <- plotList[[1]]
-stat2Bar
+```{r, fig.height=6, fig.width=6}
+plotListTP53 <- lapply(pairListTP53, function(p) {
+  compareR2(p[1],p[2],geneMat)
+})
+#plotList[[1]] <- plotList[[1]] +ylab("")
+plot_grid(plotlist= plotListTP53, ncol= 1, align = "hv")
+#ggsave("drugVarExpTP53.pdf", height = 6, width = 6)
 ```
+
 
 # Protein markers for clincial outcomes
 
@@ -322,12 +420,26 @@ stat2Bar
 
 ```{r}
 protCLL.sub <- protCLL[!rowData(protCLL)$chromosome_name %in% c("X","Y"),]
-protMat <- assays(protCLL.sub)[["count"]]
+protMat <- assays(protCLL.sub)[["count_combat"]]
 
-survTab <- survT %>% filter(patID %in% colnames(protCLL)) %>%
-  select(patID, OS, died, TTT, treatedAfter) %>%
-  dplyr::rename(patientID = patID)
+
+survTab <- survT %>% 
+  select(patID, OS, died, TTT, treatedAfter, age,sex) %>%
+  dplyr::rename(patientID = patID) %>%
+  filter(patientID %in% colnames(protMat))
 ```
+
+
+TTT events
+```{r}
+table(survTab$treatedAfter)
+```
+
+OS events
+```{r}
+table(survTab$died)
+```
+
 
 ```{r, cache=TRUE, autodep=TRUE}
 uniRes.ttt <- lapply(rownames(protMat), function(n) {
@@ -352,27 +464,24 @@ uniRes <- bind_rows(uniRes.ttt, uniRes.os) %>%
 
 ### A table showing significant associations
 ```{r}
-uniRes %>% filter(p.adj < 0.1) %>% mutate_if(is.numeric, formatC, digits=2,format="e") %>%
+uniRes %>% filter(p.adj <= 0.05) %>% mutate_if(is.numeric, formatC, digits=2,format="e") %>%
   select(name, p, HR, p.adj, outcome) %>% DT::datatable()
 ```
 
-## Selection protein markers independent of known risks using multi-vairate model
+
+## Selecting protein markers independent of known risks using multi-vairate model
 
 Prepare data
 ```{r}
 #table of known risks
-riskTab <- select(survTab, patientID) %>%
-  left_join(patMeta[,c("Patient.ID","IGHV.status","TP53","trisomy12","del17p","gender")], by = c(patientID = "Patient.ID")) %>% 
+riskTab <- select(survTab, patientID, age, sex) %>%
+  left_join(patMeta[,c("Patient.ID","IGHV.status","TP53","trisomy12","del17p")], by = c(patientID = "Patient.ID")) %>% 
   mutate(TP53 = as.numeric(as.character(TP53)),
          del17p = as.numeric(as.character(del17p))) %>%
   mutate(`TP53.del17p` = as.numeric(TP53 | del17p),
          IGHV = factor(ifelse(IGHV.status %in% "U",1,0))) %>%
   select(-TP53, -del17p,-IGHV.status) %>%
-  mutate_if(is.numeric, as.factor) %>%
-  dplyr::rename(sex=gender) %>%
-  mutate(age = survT[match(patientID, survT$patID),]$age) %>%
-  mutate(age = age/10) %>%
-  select(patientID, sex, age, trisomy12,`TP53.del17p`, IGHV)
+  mutate(age = age/10) 
 ```
 
 Multi-variate test
@@ -419,16 +528,16 @@ cTab <- bind_rows(cTab.ttt, cTab.os) %>%
   arrange(p)
 ```
 
+
 ### A table showing idependent protein markers
 ```{r}
-cTab %>% filter(p.adj < 0.1) %>% mutate_if(is.numeric, formatC, digits=2,format="e") %>%
+cTab %>% filter(p.adj <= 0.05) %>% mutate_if(is.numeric, formatC, digits=2,format="e") %>%
   select(name, p, p.adj, outcome) %>% DT::datatable()
 ```
 
-### Forest plot of selected markers
-
+### Forest plot of several markers as examples
 ```{r}
-plotHazard <- function(survRes, protName, title = "") {
+plotHazard <- function(survRes, protName, title = "", xLim = c(0.2,6)) {
   sumTab <- summary(survRes)$coefficients
   confTab <- summary(survRes)$conf.int
   #correct feature name
@@ -459,9 +568,8 @@ plotHazard <- function(survRes, protName, title = "") {
               aes(y = HR, label =  sprintf("italic(P)~'='~'%s'",
                                            formatNum(p, digits = 1))),
               color = "black", size =5, parse = TRUE) +
-    #expand_limits(y=c(-0.5,0))+
     scale_color_manual(values = c(yes = "darkred", no = "black")) +
-    ggtitle(title) + scale_y_log10() +
+    ggtitle(title) + scale_y_log10(limits = xLim) +
     ylab("Hazard ratio") +
     coord_flip() +
     theme_full +
@@ -470,6 +578,24 @@ plotHazard <- function(survRes, protName, title = "") {
 }
 ```
 
+**NFKB2**
+```{r, fig.width=5, fig.height=6}
+protName <- "NFKB2"
+outcomeName <- "TTT"
+survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+hr.prmt5 <- plotHazard(survRes, protName, outcomeName)
+hr.prmt5
+```
+
+
+**PURA**
+```{r, fig.width=5, fig.height=6}
+protName <- "PURA"
+outcomeName <- "TTT"
+survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
+hr.prmt5 <- plotHazard(survRes, protName, outcomeName)
+hr.prmt5
+```
 
 
 **PRMT5**
@@ -477,7 +603,7 @@ plotHazard <- function(survRes, protName, title = "") {
 protName <- "PRMT5"
 outcomeName <- "TTT"
 survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
-hr.prmt5 <- plotHazard(survRes, protName, outcomeName)
+hr.prmt5 <- plotHazard(survRes, protName, "Time to treatment")
 hr.prmt5
 ```
 
@@ -486,7 +612,7 @@ hr.prmt5
 protName <- "PYGB"
 outcomeName <- "TTT"
 survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
-hr.pygb <- plotHazard(survRes, protName, outcomeName)
+hr.pygb <- plotHazard(survRes, protName, "Time to treatment")
 hr.pygb
 ```
 
@@ -495,85 +621,34 @@ hr.pygb
 protName <- "PES1"
 outcomeName <- "TTT"
 survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
-hr.pes1 <- plotHazard(survRes, protName, outcomeName)
+hr.pes1 <- plotHazard(survRes, protName, "Time to treatment")
 hr.pes1
 ```
 
-
-**GNAI2**
-```{r,fig.width=5, fig.height=6}
-protName <- "GNAI2"
-outcomeName <- "OS"
-survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
-plotHazard(survRes, protName, outcomeName)
-```
 
 **RRAS2**
 ```{r,fig.width=5, fig.height=6}
 protName <- "RRAS2"
 outcomeName <- "OS"
 survRes <- filter(cTab, outcome == outcomeName , name == protName)$fullModel[[1]]
-plotHazard(survRes, protName, outcomeName)
+hr.rras <- plotHazard(survRes, protName, outcomeName)
+hr.rras
 ```
 
 
-### Bar plots comparing C-index
 
-**TTT**
-```{r, fig.height=4, fig.width=12}
-nameList <- c("PRMT5","PYGB","PES1")
-cTab.sub <- filter(cTab, outcome == "TTT", name %in% nameList)
-plotList <- lapply(seq(nrow(cTab.sub)), function(i) {
-  plotTab <- tibble(model = c("knownRisks","plusProtein"),
-                    cindex = c(cTab.sub[i,]$c0, cTab.sub[i,]$c1),
-                    ci = c(cTab.sub[i,]$ci0,cTab.sub[i,]$ci1))
-  ggplot(plotTab, aes(x=model, y=cindex, fill = model)) + 
-    geom_bar(stat="identity",width=0.6) + 
-    geom_errorbar(aes(ymin=cindex + ci, ymax = cindex-ci), width=0.5) +
-    theme_full+ scale_fill_manual(values = colList[6:7]) +
-    ggtitle(cTab.ttt[i,]$name) + theme(legend.position = "none") +
-    
-    ylab("Harrell's C-index")
-})
-cTTT <- plot_grid(plotlist = plotList, ncol =3)
-cTTT
+### Clinical model without proteins (only including known risks in the multivariate model)
+
+#### TTT
+```{r TTT_onlyRisk, fig.height=5, fig.width=5}
+nullModelTTT <- runCox(survTab, riskTab, "TTT","treatedAfter")
+pTTT<-plotHazard(nullModelTTT, "known risks", "TTT")
+pTTT
 ```
 
-**OS**
-(The associations with OS are not very reliable as we don't have enough events)
-```{r, fig.height=4, fig.width=12}
-nameList <- c("GNAI2","RRAS2")
-cTab.sub <- filter(cTab, outcome == "OS", name %in% nameList)
-plotList <- lapply(seq(nrow(cTab.sub)), function(i) {
-  plotTab <- tibble(model = c("knownRisks","plusProtein"),
-                    cindex = c(cTab.sub[i,]$c0, cTab.sub[i,]$c1),
-                    ci = c(cTab.sub[i,]$ci0,cTab.sub[i,]$ci1))
-  ggplot(plotTab, aes(x=model, y=cindex, fill = model)) + 
-    geom_bar(stat="identity",width=0.6) + 
-    geom_errorbar(aes(ymin=cindex + ci, ymax = cindex-ci), width=0.5) +
-    theme_full+ scale_fill_manual(values = colList[6:7]) +
-    ggtitle(cTab.ttt[i,]$name) + theme(legend.position = "none") +
-    
-    ylab("Harrell's C-index")
-})
-plot_grid(plotlist = plotList, ncol =3)
+#### OS
+```{r, fig.height=5, fig.width=5}
+nullModelOS <- runCox(survTab, riskTab, "OS","died")
+pOS <- plotHazard(nullModelOS, "known risks", "OS", xLim = c(0.01,20))
+pOS
 ```
-
-
-# Assemble figure
-
-## Main text figure 
-```{r Figure5, fig.width=18, fig.height=13}
-
-leftCol <- plot_grid(cTTT, drugBar, drugCor, ncol =1, rel_heights = c(0.3,0.4,0.4), labels = c("A","C","D"), label_size =22)
-rightCol <- plot_grid(hr.prmt5, stat2Bar, ncol =1, rel_heights = c(0.6,0.4), align = "v", labels = c("B","E"),label_size =22)
-
-plot_grid(leftCol, rightCol, ncol=2, rel_widths = c(0.7,0.3))
-
-```
-
-### Supplementary
-```{r suppl_multiCox, fig.width=10, fig.height=8}
-plot_grid(hr.pygb, hr.pes1, ncol=2)
-```
-

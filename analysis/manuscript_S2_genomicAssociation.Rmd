@@ -11,6 +11,7 @@ editor_options:
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(limma)
 library(DESeq2)
+library(qvalue)
 library(proDA)
 library(IHW)
 library(SummarizedExperiment)
@@ -19,9 +20,10 @@ library(tidyverse)
 #load datasets
 load("../data/patMeta_enc.RData")
 load("../data/ddsrna_enc.RData")
-load("../data/proteomic_LUMOS_enc.RData")
+load("../data/proteomic_explore_enc.RData")
 source("../code/utils.R")
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png","pdf"))
+#protCLL <- protCLL[,colnames(protCLL) %in% patMeta$Patient.ID]
 ```
 
 
@@ -29,16 +31,18 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,dev = c("png
 
 ## Process proteomics data
 ```{r}
-protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
+#protCLL <- protCLL[rowData(protCLL)$uniqueMap,]
 protMat <- assays(protCLL)[["count"]] #without imputation
+protMatLog <- assays(protCLL)[["log2Norm"]]
 ```
+
 
 ## Prepare genomic background
 
 ### Get mutations with at least 5 cases
 ```{r}
 geneMat <-  patMeta[match(colnames(protMat), patMeta$Patient.ID),] %>%
-  select(Patient.ID, IGHV.status, del11p:U1) %>%
+  select(Patient.ID, IGHV.status, del11q:U1) %>%
   mutate_if(is.factor, as.character) %>% mutate(IGHV.status = ifelse(IGHV.status == "M", 1,0)) %>%
   mutate_at(vars(-Patient.ID), as.numeric) %>% #assign a few unknown mutated cases to wildtype
   data.frame() %>% column_to_rownames("Patient.ID")
@@ -52,72 +56,62 @@ geneMat <- geneMat[,apply(geneMat,2, function(x) sum(x %in% 1, na.rm = TRUE))>=5
 colnames(geneMat)
 ```
 
-### Plot to summarise genomic background
-```{r}
-sortTab <- function(sumTab) {
-  i <- ncol(sumTab)
-  #print(i)
-  if (i == 1) {
-    #print(rownames(sumTab)[order(sumTab[,i])])
-    return(rownames(sumTab)[order(sumTab[,i])])
-  }
-  orderRow <- c(sortTab(sumTab[sumTab[,i]==0, seq(1,i-1), drop = FALSE]), sortTab(sumTab[sumTab[,i]==1, seq(1,i-1), drop = FALSE]))
-  return(orderRow)
-}
 
-geneMat.sort <- geneMat
-geneMat.sort[is.na(geneMat.sort)] <- 0
-sortedGene <- names(sort(colSums(geneMat.sort)))
-geneMat.sort <- geneMat.sort[,sortedGene]
-sortedPat <- sortTab(geneMat.sort)
-```
 
-```{r geneSummary, fig.height=6, fig.width=8}
-plotTab <- geneMat %>% rownames_to_column("patID") %>% mutate_all(as.character) %>%
-  gather(key = "gene", value = "status", -patID) %>%
-  mutate(gene = factor(gene, levels = sortedGene), patID = factor(patID, levels = sortedPat)) %>%
-  mutate(status = ifelse(is.na(status),"NA",status))
+# Differential protein expression using proDA (LUMOS dataset)
 
-ggplot(plotTab, aes(x=patID, y = gene, fill = status)) + 
-  geom_tile(color = "black") +
-  theme_minimal() + 
-  scale_fill_manual(values = c("1" = colList[4],"0" ="white", "NA" = "grey80")) +
-  theme(axis.text.x = element_text(angle = 90, hjust =1, vjust=0.5),
-        panel.grid = element_blank(), legend.position = "none") +
-  ylab("") + xlab("Patient ID")
-```
 
-# Differential protein expression using proDA
+We will use proDA, which is based on a linear model that considers the missing values using a probabilistic drop out model, to identify protein expression changes related to genotypes.   
+To avoid potential confounding effect of IGHV and trisomy12, which are main drivers in CLL proteomic profile, we will block for IGHV status when we are testing trisomy12 and block trisomy12 when testing for IGHV status. For other genotypes, we will block for both IGHV status and trisomy12.  
 
-## For IGHV and trisomy12
+## Identify protein expression changes related to IGHV and trisomy12
 
-Fit the probailistic dropout model
-```{r, eval=FALSE}
+
+### Fit the probailistic dropout model
+```{r, eval=TRUE, cache=TRUE, autodep=TRUE}
 designMat <- geneMat[  ,c("IGHV.status","trisomy12")]
-fit <- proDA(protMat, design = ~ .,
+designMat[,"batch"] <- factor(protCLL[,rownames(designMat)]$batch)
+fit <- proDA(protMat, design = ~ . ,
              col_data = designMat)
+
 ```
 
-Test for differentially expressed proteins
-```{r, eval=FALSE}
+### Limma for calculating log2 fold change
+```{r, eval=TRUE, cache=TRUE, autodep=TRUE}
+lmDesign <- model.matrix(~., designMat)
+lmFit <- lmFit(protMatLog, design = lmDesign)
+fit2 <- eBayes(lmFit)
+```
+
+### Test for differentially expressed proteins
+```{r, eval=TRUE, cache=TRUE, autodep=TRUE}
 resList.ighvTri12 <- lapply(c("IGHV.status","trisomy12"), function(n) {
   contra <- n
   resTab <- test_diff(fit, contra) %>%
     dplyr::rename(id = name, logFC = diff, t=t_statistic,
                   P.Value = pval, adj.P.Val = adj_pval) %>% 
     mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>%
-    select(name, id, logFC, t, P.Value, adj.P.Val) %>%  
+    select(name, id, logFC, t, P.Value, adj.P.Val, n_obs) %>%  
     arrange(P.Value) %>% mutate(Gene = n) %>%
     as_tibble()
+  
+  foldTab <- topTable(fit2, coef = n, number = "all") %>%
+    as_tibble(rownames = "id") %>% select(id, logFC) %>%
+    dplyr::rename(log2FC = logFC)
+  
+  resTab <- left_join(resTab, foldTab, by = "id")
+  resTab
+  
 }) %>% bind_rows()
 ```
 
 ## Test for other variantions (blocking for IGHV and trisomy12)
 Fit the probailistic dropout model and test for differentially expressed proteins
-```{r, eval=FALSE}
+```{r, eval=TRUE, cache=TRUE, autodep=TRUE}
 otherGenes <- colnames(geneMat)[!colnames(geneMat)%in% c("IGHV.status","trisomy12")]
 resList <- lapply(otherGenes, function(n) {
   designMat <- geneMat[,c("IGHV.status","trisomy12",n)]
+  designMat[,"batch"] <- factor(protCLL[,rownames(designMat)]$batch)
   designMat <- designMat[!is.na(designMat[[n]]),]
   testMat <- protMat[,rownames(designMat)]
   
@@ -129,15 +123,26 @@ resList <- lapply(otherGenes, function(n) {
     dplyr::rename(id = name, logFC = diff, t=t_statistic,
                   P.Value = pval, adj.P.Val = adj_pval) %>% 
     mutate(name = rowData(protCLL[id,])$hgnc_symbol) %>%
-    select(name, id, logFC, t, P.Value, adj.P.Val) %>%  
+    select(name, id, logFC, t, P.Value, adj.P.Val, n_obs) %>%  
     arrange(P.Value) %>% mutate(Gene = n) %>%
     as_tibble()
+
+  #calculte log2 fold change
+  lmDesign <- model.matrix(~., designMat)
+  protMatTest <- protMatLog[,rownames(lmDesign)]
+  lmFit <- lmFit(protMatTest, design = lmDesign)
+  fit2 <- eBayes(lmFit)
+  foldTab <- topTable(fit2, coef = n, number = "all") %>%
+    as_tibble(rownames = "id") %>% select(id, logFC) %>%
+    dplyr::rename(log2FC = logFC)
+  resTab <- left_join(resTab, foldTab, by = "id")
+
   resTab
 }) %>% bind_rows()
 ```
 
 Combine the results
-```{r, eval=FALSE}
+```{r, eval=TRUE, cache=TRUE, autodep=TRUE}
 resList <- bind_rows(resList.ighvTri12, resList)
 
 #Adjusting p values
@@ -151,50 +156,80 @@ resList <- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))
 
 ```
 
+
 Save the results for re-using
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 save(resList, file = "../output/deResList.RData")
 ```
 
-Load the pre-calculated results (differential expression tests take long time.)
+## Bar plot of number of significant associations with proteins (5% FDR)
+
+Load the list of differentially expression proteins generated by Section 2
 ```{r}
 load("../output/deResList.RData")
 ```
 
-# Summarise significant associations
-
-## Bar plot of number of significant associations (10% FDR)
-
 ```{r}
 plotTab <- resList %>% group_by(Gene) %>%
-  summarise(nFDR.local = sum(adj.P.Val <= 0.1),
-            nFDR.global = sum(adj.P.global <= 0.1),
-            nFDR.IHW = sum(adj.P.IHW <= 0.1),
-            nP = sum(P.Value < 0.05))
-
-#use IHW for adjusting p-values
-resList <- mutate(resList, adj.P.Val = adj.P.IHW)
+  summarise(nFDR.local = sum(adj.P.Val <= 0.05))
 ```
 
-```{r number_of_association, fig.height=5, fig.width=8}
-plotTab <- arrange(plotTab, desc(nFDR.IHW)) %>% mutate(Gene = factor(Gene, levels = Gene))
-ggplot(plotTab, aes(x=Gene, y = nFDR.IHW)) + geom_bar(stat="identity",fill=colList[2]) + 
-  geom_text(aes(label = paste0("n=", nFDR.IHW)),vjust=-1,col=colList[1]) + ylim(0,1200) +
+
+
+
+Individual gene adjusted
+```{r number_of_association_local, fig.height=5, fig.width=8}
+plotTab <- arrange(plotTab, desc(nFDR.local)) %>% mutate(Gene = factor(Gene, levels = Gene))
+numCorBar <- ggplot(plotTab, aes(x=Gene, y = nFDR.local)) + geom_bar(stat="identity",fill=colList[2]) + 
+  geom_text(aes(label = nFDR.local),vjust=-1,col="black",size=5) + ylim(0,1200) +
   theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-  ylab("Number of associations\n(10% FDR)") + xlab("")
+  ylab("Number of associations\n(5% FDR)") + xlab("")
+
+numCorBar
 ```
 
-## Bar plot of number of raw P-value < 0.05 
 
-```{r number_of_association_pval, fig.height=5, fig.width=8}
-plotTab <- arrange(plotTab, desc(nP)) %>% mutate(Gene = factor(Gene, levels = Gene))
-ggplot(plotTab, aes(x=Gene, y = nP)) + geom_bar(stat="identity",fill=colList[2]) + 
-  geom_text(aes(label = paste0("n=", nP)),vjust=-1,col=colList[1]) + ylim(0,1500) +
-  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-  ylab("Number of associations\n(nominal P-value < 0.05)") + xlab("")
+# Some examples of protein-gene associations that passed 0.01 p-value but not 5% FDR
+
+```{r}
+protTab <- sumToTidy(protCLL, rowID = "uniprotID", colID = "patID") %>%
+  mutate(count = count_combat)
+```
+
+## Del13q
+```{r del13q_example, fig.height=4, fig.width=9}
+resListSub <- filter(resList, Gene == "del13q")
+nameList <- c("CD22","CD72")
+
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(del13q = patMeta[match(patID, patMeta$Patient.ID),]$del13q) %>%
+  mutate(status = ifelse(del13q %in% 1,"del(13)(q14)","other"),
+         name = hgnc_symbol) %>%
+  mutate(status = factor(status, levels = c("other","del(13)(q14)")))
+pList <- plotBox(plotTab, pValTabel = resListSub, y_lab = "Protein expression")
+del13qBox <- cowplot::plot_grid(plotlist= pList, ncol=2)
+del13qBox
+```
+
+## TP53
+```{r TP53_BCAS2, fig.height=4, fig.width=4}
+resListSub <- filter(resList, Gene == "TP53")
+nameList <- c("BCAS2")
+
+
+plotTab <- protTab %>% filter(hgnc_symbol %in% nameList) %>%
+  mutate(TP53 = patMeta[match(patID, patMeta$Patient.ID),]$TP53) %>%
+  mutate(status = ifelse(TP53 %in% 1,"Mut","WT"),
+         name = hgnc_symbol) %>%
+  mutate(status = factor(status, levels = c("WT","Mut")))
+pList <- plotBox(plotTab, pValTabel = resListSub, y_lab = "Protein expression")
+tp53Box <- cowplot::plot_grid(plotlist= pList, ncol=1)
+tp53Box
 ```
 
 # Association test in timsTOF data
+
+The same procedure as for the LUMOS dataset will be used. 
 
 ## For IGHV and trisomy12
 
@@ -207,7 +242,7 @@ protMat <- assays(protCLL)[["count"]] #without imputation
 Genetic data
 ```{r}
 geneMat <-  patMeta[match(colnames(protMat), patMeta$Patient.ID),] %>%
-  select(Patient.ID, IGHV.status, trisomy12, SF3B1, trisomy19, del11q) %>%
+  select(Patient.ID, IGHV.status, trisomy12, SF3B1, trisomy19, del11q, del13q) %>%
   mutate_if(is.factor, as.character) %>% mutate(IGHV.status = ifelse(IGHV.status == "M", 1,0)) %>%
   mutate_at(vars(-Patient.ID), as.numeric) %>% #assign a few unknown mutated cases to wildtype
   data.frame() %>% column_to_rownames("Patient.ID")
@@ -273,7 +308,131 @@ resList <- mutate(resList, adj.P.IHW = adj_pvalues(ihwRes))
 
 ```
 
-Save the results for re-using
 ```{r, eval=FALSE}
 save(resList, file = "../output/deResList_timsTOF.RData")
 ```
+
+## Bar plot of number of significant associations with proteins (5% FDR)
+
+Load the list of differentially expression proteins generated by Section 2
+```{r}
+load("../output/deResList_timsTOF.RData")
+```
+
+```{r}
+plotTab <- resList %>% group_by(Gene) %>%
+  summarise(nFDR.local = sum(adj.P.Val <= 0.05))
+```
+
+
+```{r number_of_association_local_tims, fig.height=5, fig.width=8}
+plotTab <- arrange(plotTab, desc(nFDR.local)) %>% mutate(Gene = factor(Gene, levels = Gene))
+numCorBar <- ggplot(plotTab, aes(x=Gene, y = nFDR.local)) + geom_bar(stat="identity",fill=colList[2]) + 
+  geom_text(aes(label = nFDR.local),vjust=-1,col="black",size=5) + ylim(0,1000) +
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab("Number of associations\n(5% FDR)") + xlab("")
+
+numCorBar
+```
+
+# Identify assocations between RNA expression and genotypes
+
+DEseq2 will be used to identify RNA expression changes related to genotypes. The same blocking strategy as used for the proteomic data will also be used for RNAseq data. 
+
+## Prepare RNA seq data
+Subset for samples with proteomics
+```{r}
+ddsSub <- dds[,dds$PatID %in% colnames(protCLL)]
+#how many samples?
+
+ddsSub <- ddsSub[rownames(ddsSub) %in% rowData(protCLL)$ensembl_gene_id,]
+
+#how many genes without any RNA expression detected?
+#table(rowSums(counts(ddsSub)) > 0)
+
+ddsSub <- ddsSub[rowSums(counts(ddsSub)) > 0, ]
+colData(ddsSub) <- cbind(colData(ddsSub), geneMat[colnames(ddsSub),])
+
+```
+
+### Test For IGHV and trisomy12
+
+```{r, message=FALSE, warning=FALSE, cache=TRUE, autodep=TRUE}
+design(ddsSub) <- ~ IGHV.status + trisomy12
+deRes <- DESeq(ddsSub)
+```
+
+Test for differentially expressed proteins
+```{r, eval=TRUE}
+resList.ighvTri12 <- lapply(c("IGHV.status","trisomy12"), function(n) {
+  resTab <- results(deRes, name = n, tidy = TRUE) %>%
+    dplyr::rename(id = row, log2FC = log2FoldChange, t=stat,
+                  P.Value = pvalue, adj.P.Val = padj) %>% 
+    mutate(name = rowData(ddsSub[id,])$symbol) %>%
+    select(name, id, log2FC, t, P.Value, adj.P.Val) %>%  
+    arrange(P.Value) %>% mutate(Gene = n) %>%
+    as_tibble()
+}) %>% bind_rows()
+```
+
+### Test for other variantions (blocking for IGHV and trisomy12)
+```{r, eval=TRUE, cache=TRUE, message=FALSE, warning=FALSE, autodep=TRUE}
+otherGenes <- colnames(geneMat)[!colnames(geneMat)%in% c("IGHV.status","trisomy12")]
+resList <- lapply(otherGenes, function(n) {
+  
+  ddsTest <- ddsSub[,!is.na(ddsSub[[n]])]
+  design(ddsTest) <- as.formula(paste0("~ IGHV.status + trisomy12 + ",n))
+  deRes <- DESeq(ddsTest, betaPrior = FALSE)
+
+  resTab <- results(deRes, name = n, tidy = TRUE) %>%
+    dplyr::rename(id = row, log2FC = log2FoldChange, t=stat,
+                  P.Value = pvalue, adj.P.Val = padj) %>% 
+    mutate(name = rowData(ddsSub[id,])$symbol) %>%
+    select(name, id, log2FC, t, P.Value, adj.P.Val) %>%  
+    arrange(P.Value) %>% mutate(Gene = n) %>%
+    as_tibble()
+  
+  resTab
+}) %>% bind_rows()
+```
+
+Combine the results
+```{r, eval=TRUE, cache=TRUE, autodep=TRUE}
+resListRNA <- bind_rows(resList.ighvTri12, resList)
+```
+
+Save the results for re-using
+```{r, eval=TRUE}
+save(resListRNA, file = "../output/deResListRNA.RData")
+```
+
+Load the pre-calculated results (differential expression tests take long time.)
+```{r}
+load("../output/deResListRNA.RData")
+```
+
+### Bar plot of number of significant associations (5% FDR)
+
+```{r}
+fdrCut = 0.05
+plotTab <- resListRNA %>% group_by(Gene) %>%
+  summarise(nFDR.local = sum(adj.P.Val <= fdrCut, na.rm=TRUE),
+            nP = sum(P.Value < 0.05))
+```
+
+P values adjusted for each variant
+```{r , fig.height=6, fig.width=9}
+#local adjusted P-values
+
+plotTab <- arrange(plotTab, desc(nFDR.local)) %>% mutate(Gene = factor(Gene, levels = Gene))
+ggplot(plotTab, aes(x=Gene, y = nFDR.local)) + geom_bar(stat="identity",fill=colList[2]) + 
+  geom_text(aes(label = paste0(nFDR.local)),vjust=-1,col="black") + 
+  theme_half + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+  ylab("Number of associations\n(5% FDR)") + xlab("")
+```
+
+
+
+
+
+
